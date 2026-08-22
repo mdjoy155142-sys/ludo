@@ -3,242 +3,214 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>লুডু মিনি অ্যাপ - রেফার সিস্টেম সহ</title>
-    <!-- টেলিগ্রাম Web App SDK -->
+    <title>লুডু কিং - টেলিগ্রাম মিনি অ্যাপ</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
-            background-color: var(--tg-theme-bg-color, #f4f4f9);
-            color: var(--tg-theme-text-color, #333);
+            background-color: #0b192c;
+            color: #ffffff;
             text-align: center;
             margin: 0;
-            padding: 10px;
+            padding: 5px;
         }
         .container {
-            max-width: 420px;
+            max-width: 450px;
             margin: auto;
-            background: var(--tg-theme-secondary-bg-color, #ffffff);
-            padding: 20px;
-            border-radius: 15px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-        }
-        .hidden { display: none !important; }
-        
-        .box {
-            background: #fff0f5;
-            border: 2px dashed #e2136e;
+            background: #1e3e62;
             padding: 15px;
-            border-radius: 10px;
-            margin-bottom: 15px;
+            border-radius: 15px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
         }
-        .refer-box {
-            background: #fef9e7;
-            border: 2px dashed #f39c12;
-        }
-        .withdraw-box {
-            background: #e8f8f5;
-            border: 2px dashed #2ecc71;
-        }
-        .bkash-number {
-            font-size: 20px;
-            color: #e2136e;
+        .balance-card {
+            background: #000;
+            color: #f39c12;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            font-size: 16px;
             font-weight: bold;
+            border: 1px solid #f39c12;
+        }
+        /* লুডু বোর্ড ডিজাইন */
+        .ludo-board {
+            width: 320px;
+            height: 320px;
+            margin: 15px auto;
+            background: #fff;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            border: 4px solid #000;
+            border-radius: 8px;
+        }
+        .base {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            grid-template-rows: repeat(2, 1fr);
+            padding: 10px;
+            gap: 8px;
+        }
+        .red-base { background: #e74c3c; }
+        .green-base { background: #2ecc71; }
+        .yellow-base { background: #f1c40f; }
+        .blue-base { background: #3498db; }
+
+        .token-circle {
+            background: #fff;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+            color: #000;
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.3);
+        }
+
+        .center-home {
+            background: #fdfefe;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid #333;
+            font-weight: bold;
+            color: #333;
+            font-size: 14px;
+        }
+
+        .dice-section {
+            background: #162032;
+            padding: 12px;
+            border-radius: 10px;
+            margin-top: 10px;
+            border: 1px solid #4a6fa5;
+        }
+        .dice-display {
+            font-size: 35px;
             margin: 5px 0;
         }
-        select, input {
-            padding: 10px;
+        .btn-roll {
+            background: linear-gradient(45deg, #f39c12, #e67e22);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            width: 100%;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+        .btn-roll:active { transform: scale(0.98); }
+
+        .box {
+            background: #162032;
+            border: 1px solid #4a6fa5;
+            padding: 12px;
+            border-radius: 10px;
+            margin-top: 10px;
+        }
+        input, select {
+            padding: 8px;
             width: 85%;
             border-radius: 5px;
             border: 1px solid #ccc;
             text-align: center;
-            font-size: 15px;
-            margin-bottom: 10px;
-            background: white;
+            font-size: 14px;
+            margin-bottom: 8px;
+            background: #fff;
+            color: #000;
         }
-        .prize-info {
-            background: #e8f4fd;
-            padding: 8px;
-            border-radius: 5px;
-            font-size: 12px;
-            color: #0275d8;
-            margin-bottom: 10px;
-            font-weight: bold;
-        }
-        .btn-bkash {
-            background-color: #e2136e;
+        .btn-action {
+            background-color: #27ae60;
             color: white;
             border: none;
-            padding: 10px 20px;
-            font-size: 15px;
-            border-radius: 5px;
-            cursor: pointer;
-            width: 90%;
-            font-weight: bold;
-        }
-        .btn-join {
-            background-color: #f39c12;
-            color: white;
-            border: none;
-            padding: 12px 20px;
-            font-size: 16px;
-            border-radius: 8px;
-            cursor: pointer;
-            width: 100%;
-            font-weight: bold;
-        }
-        .btn-refer {
-            background-color: #d35400;
-            color: white;
-            border: none;
-            padding: 10px 20px;
+            padding: 10px;
             font-size: 14px;
             border-radius: 5px;
             cursor: pointer;
             width: 90%;
             font-weight: bold;
         }
-        .btn-withdraw {
-            background-color: #2ecc71;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            font-size: 15px;
-            border-radius: 5px;
-            cursor: pointer;
-            width: 90%;
-            font-weight: bold;
-        }
-        .balance-card {
-            background: #2c3e50;
-            color: white;
-            padding: 12px;
-            border-radius: 8px;
-            margin-bottom: 15px;
-            font-size: 16px;
-            font-weight: bold;
-        }
-        .game-section {
-            background: #eef9ec;
-            border: 2px solid #28a745;
-            padding: 15px;
-            border-radius: 10px;
-            margin-top: 20px;
-        }
-        .dice-display {
-            font-size: 40px;
-            margin: 10px 0;
-        }
-        .btn-game {
-            background-color: #28a745;
-            color: white;
-            border: none;
-            padding: 12px 25px;
-            font-size: 16px;
-            border-radius: 8px;
-            cursor: pointer;
-            width: 100%;
-            font-weight: bold;
-        }
-        .searching-box {
-            background: #fff8e1;
-            border: 2px solid #f39c12;
-            padding: 20px;
-            border-radius: 10px;
-            margin-top: 15px;
-        }
-        .player-list {
-            font-size: 13px;
-            color: #555;
-            margin: 8px 0;
-            font-weight: bold;
-        }
+        .refer-box { background: #2c3e50; border-color: #f39c12; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2 id="welcomeText">লুডু মিনি অ্যাপ</h2>
+    <h2 id="welcomeText" style="margin: 5px 0 10px 0; color: #f39c12;">👑 লুডু কিং মিনি অ্যাপ</h2>
 
-    <!-- ইউজারের মূল ব্যালেন্স কার্ড -->
+    <!-- ব্যালেন্স কার্ড -->
     <div class="balance-card">
-        🪙 আপনার মূল ব্যালেন্স: <span id="userBalance">1000</span> টাকা
+        🪙 ব্যালেন্স: <span id="userBalance">1000</span> টাকা
     </div>
 
-    <!-- রেফার করার সেকশন -->
+    <!-- ক্লাসিক লুডু বোর্ড -->
+    <div class="ludo-board">
+        <!-- লাল বেস (Player 2) -->
+        <div class="base red-base">
+            <div class="token-circle">🔴</div>
+            <div class="token-circle">🔴</div>
+            <div class="token-circle">🔴</div>
+            <div class="token-circle">🔴</div>
+        </div>
+        
+        <!-- সবুজ বেস (Player 3) -->
+        <div class="base green-base">
+            <div class="token-circle">🟢</div>
+            <div class="token-circle">🟢</div>
+            <div class="token-circle">🟢</div>
+            <div class="token-circle">🟢</div>
+        </div>
+
+        <!-- মাঝের হোম -->
+        <div class="center-home">
+            <span>🏆 LUDO</span>
+            <span id="turnIndicator" style="font-size: 11px; color: #e74c3c;">আপনার পালা</span>
+        </div>
+
+        <!-- নীল বেস (Player 1) -->
+        <div class="base blue-base">
+            <div class="token-circle">🔵</div>
+            <div class="token-circle">🔵</div>
+            <div class="token-circle">🔵</div>
+            <div class="token-circle">🔵</div>
+        </div>
+
+        <!-- হলুদ বেস (Player 4) -->
+        <div class="base yellow-base">
+            <div class="token-circle">🟡</div>
+            <div class="token-circle">🟡</div>
+            <div class="token-circle">🟡</div>
+            <div class="token-circle">🟡</div>
+        </div>
+    </div>
+
+    <!-- ছক্কা ও গেম কন্ট্রোল -->
+    <div class="dice-section">
+        <div class="dice-display" id="diceVal">🎲 ⚀</div>
+        <button class="btn-roll" onclick="rollDice()">ছক্কা ফেলুন (Roll Dice)</button>
+        <p id="gameStatus" style="margin: 8px 0 0 0; font-size: 13px; font-weight: bold; color: #f1c40f;"></p>
+    </div>
+
+    <!-- ডিপোজিট সেকশন -->
+    <div class="box">
+        <p style="margin: 0 0 5px 0; font-weight: bold; color: #e2136e;">বিকাশ ডিপোজিট</p>
+        <p style="font-size: 12px; margin: 0; color: #ccc;">মার্চেন্ট নম্বর: <b style="color: #fff;">01919130118</b></p>
+        <input type="text" id="trxIdInput" placeholder="বিকাশ TrxID দিন" style="margin-top: 5px;">
+        <br>
+        <button class="btn-action" style="background-color: #e2136e;" onclick="submitDeposit()">ডিপোজিট রিকোয়েস্ট পাঠান</button>
+        <p id="depositMsg" style="font-size: 11px; margin: 3px 0 0 0; font-weight: bold;"></p>
+    </div>
+
+    <!-- রেফার সেকশন -->
     <div class="box refer-box">
-        <p style="margin: 0; font-weight: bold; color: #d35400;">বন্ধুদের রেফার করুন ও আয় করুন!</p>
-        <p style="font-size: 12px; color: #555; margin: 5px 0;">রেফার করলে আপনি পাবেন ২০ টাকা এবং আপনার বন্ধু পাবে ১০ টাকা বোনাস।</p>
-        <input type="text" id="referLinkInput" readonly style="font-size: 12px; background: #fff; width: 90%;">
+        <p style="margin: 0 0 3px 0; font-weight: bold; color: #f39c12;">বন্ধুদের রেফার করুন</p>
+        <input type="text" id="referLinkInput" readonly style="font-size: 11px; background: #fff;">
         <br>
-        <button class="btn-refer" onclick="shareReferralLink()">রেফার লিংক শেয়ার করুন</button>
-    </div>
-
-    <!-- ১. টাকা ডিপোজিট করার সেকশন -->
-    <div class="box" id="depositBox">
-        <p style="margin: 0; font-weight: bold; color: #e2136e;">টাকা ডিপোজিট করে ব্যালেন্স বাড়ান</p>
-        <p style="font-size: 12px; margin: 3px 0;">বিকাশ মার্চেন্ট (Payment) নম্বর:</p>
-        <div class="bkash-number">01919130118</div>
-        <p style="font-size: 11px; color: #555; margin: 0 0 5px 0;">(বিকাশ অ্যাপের 'পেমেন্ট' অপশন ব্যবহার করুন)</p>
-        
-        <input type="text" id="trxIdInput" placeholder="বিকাশ TrxID দিন">
-        <br>
-        <button class="btn-bkash" onclick="submitDeposit()">ডিপোজিট রিকোয়েস্ট পাঠান</button>
-        <p id="depositMsg" style="font-size: 12px; margin-top: 5px; font-weight: bold;"></p>
-    </div>
-
-    <!-- ২. গেম এন্ট্রি ও ফি সিলেক্ট করার সেকশন -->
-    <div class="box" id="matchBox" style="background: #fdfefe; border-color: #f39c12;">
-        <p style="margin: 0; font-weight: bold; color: #d35400;">এন্ট্রি ফি দিয়ে খেলায় জয়েন করুন</p>
-        
-        <select id="entryFeeSelect" onchange="updatePrizePool()" style="margin-top: 8px;">
-            <option value="5">৫ টাকা</option>
-            <option value="10">১০ টাকা</option>
-            <option value="20" selected>২০ টাকা</option>
-            <option value="50">৫০ টাকা</option>
-            <option value="100">১০০ টাকা</option>
-            <option value="200">২০০ টাকা</option>
-            <option value="300">৩০০ টাকা</option>
-        </select>
-
-        <select id="playerCountSelect" onchange="updatePrizePool()">
-            <option value="2">২ জন (1 VS 1)</option>
-            <option value="4">৪ জন (Full Table)</option>
-        </select>
-
-        <div class="prize-info" id="prizeInfoBox">বিজয়ী পাবে: ৩২ টাকা (২০% কমিশন বাদ)</div>
-
-        <button class="btn-join" onclick="startMatchmaking()">ব্যালেন্স থেকে ফি কেটে গেম শুরু করুন</button>
-    </div>
-
-    <!-- প্লেয়ার খোঁজার ফেক লোডিং স্ক্রিন -->
-    <div id="searchingSection" class="searching-box hidden">
-        <h3 style="color: #d35400; margin-top: 0;">⏳ প্রতিপক্ষ খোঁজা হচ্ছে...</h3>
-        <p id="searchStatusText">অনলাইন প্লেয়ার সার্চ করা হচ্ছে...</p>
-        <div class="player-list" id="foundPlayersList"></div>
-    </div>
-
-    <!-- ৩. মূল গেম সেকশন -->
-    <div id="gameSection" class="game-section hidden">
-        <h3 style="color: #28a745; margin-top: 0;">🎮 ম্যাচ লাইভ!</h3>
-        <p style="font-size: 13px; color: #333; margin: 5px 0;" id="opponentInfo">প্রতিপক্ষ: কেউ না</p>
-        <p>বর্তমান ঘর: <span id="position">0</span> / ৩০</p>
-        <div class="dice-display" id="diceVal">🎲</div>
-        <button class="btn-game" onclick="rollDice()">ছক্কা ফেলুন (Roll Dice)</button>
-        <p id="gameStatus" style="margin-top: 10px; font-weight: bold; font-size: 14px;"></p>
-    </div>
-
-    <!-- ৪. টাকা তোলার (Withdraw) সেকশন -->
-    <div class="box withdraw-box" style="margin-top: 15px;">
-        <p style="margin: 0; font-weight: bold; color: #27ae60;">টাকা তুলুন (Withdraw)</p>
-        <p style="font-size: 12px; color: #555; margin: 3px 0;">মিনিমাম উইথড্র: ১০০ টাকা</p>
-        
-        <input type="number" id="withdrawAmount" placeholder="টাকার পরিমাণ (মিনিমাম ১০০)" style="margin-top: 8px;">
-        <br>
-        <input type="text" id="withdrawBkash" placeholder="আপনার বিকাশ নম্বর">
-        <br>
-        <button class="btn-withdraw" onclick="submitWithdraw()">উইথড্র রিকোয়েস্ট পাঠান</button>
-        <p id="withdrawMsg" style="font-size: 12px; margin-top: 5px; font-weight: bold;"></p>
+        <button class="btn-action" style="background-color: #d35400; padding: 6px;" onclick="shareReferralLink()">শেয়ার লিংক</button>
     </div>
 </div>
 
@@ -247,23 +219,19 @@
     tg.expand();
 
     let user = tg.initDataUnsafe?.user;
-    let userName = user ? (user.first_name + (user.last_name ? " " + user.last_name : "")) : "অজানা ইউজার";
+    let userName = user ? (user.first_name + (user.last_name ? " " + user.last_name : "")) : "প্লেয়ার";
     let userId = user ? user.id : "12345";
 
     if (user && user.first_name) {
-        document.getElementById('welcomeText').innerText = `স্বাগতম, ${user.first_name}!`;
+        document.getElementById('welcomeText').innerText = `👑 ${user.first_name}-এর লুডু কিং`;
     }
 
-    // বটের নতুন ইউজারনেম এখানে আপডেট করা হয়েছে
     const botToken = "8943237412:AAHrUDQbEF9kTWHwi0qJh7S2-axll0UIfcY"; 
     const adminChatId = "7100342395"; 
     const botUsername = "Ludo88_Bot"; 
 
-    let userBalance = 1000; 
-    let currentFee = 20;   
-    let currentPrize = 32; 
-    let selectedPlayersCount = 2;
-    let willUserWin = false; 
+    let userBalance = 1000;
+    document.getElementById('userBalance').innerText = userBalance;
 
     let userReferLink = `https://t.me/${botUsername}?start=ref_${userId}`;
     document.getElementById('referLinkInput').value = userReferLink;
@@ -271,27 +239,33 @@
     let startParam = tg.initDataUnsafe?.start_param;
     if (startParam && startParam.startsWith("ref_")) {
         userBalance += 10;
-        alert("🎉 অভিনন্দন! রেফার লিংকে জয়েন করার জন্য আপনি ১০ টাকা বোনাস পেয়েছেন।");
+        document.getElementById('userBalance').innerText = userBalance;
+        alert("🎉 অভিনন্দন! রেফার লিংকে জয়েন করার জন্য ১০ টাকা বোনাস পেয়েছেন।");
     }
 
-    document.getElementById('userBalance').innerText = userBalance;
-
     function shareReferralLink() {
-        let telegramShareUrl = `https://t.me/share/url?url=${encodeURIComponent(userReferLink)}&text=${encodeURIComponent("লুডু খেলে টাকা আয় করুন! ১০ টাকা ফ্রি বোনাস পান:")}`;
+        let telegramShareUrl = `https://t.me/share/url?url=${encodeURIComponent(userReferLink)}&text=${encodeURIComponent("লুডু কিং খেলে টাকা আয় করুন! ১০ টাকা ফ্রি বোনাস পান:")}`;
         window.open(telegramShareUrl, '_blank');
     }
 
-    function updatePrizePool() {
-        let fee = parseInt(document.getElementById('entryFeeSelect').value);
-        selectedPlayersCount = parseInt(document.getElementById('playerCountSelect').value);
-        let totalPool = fee * selectedPlayersCount; 
-        
-        currentPrize = totalPool - (totalPool * 0.20); 
-        currentFee = fee;
+    const diceFaces = ["⚀", "⚁", "⚂", "⚃", "⚄", "⚅"];
 
-        document.getElementById('prizeInfoBox').innerText = `👥 ${selectedPlayersCount} জন খেললে মোট পুল ${totalPool} টাকা। বিজয়ী পাবে: ${currentPrize} টাকা (২০% কমিশন বাদ)`;
+    function rollDice() {
+        let diceIdx = Math.floor(Math.random() * 6);
+        let diceNum = diceIdx + 1;
+        document.getElementById('diceVal').innerText = `🎲 ${diceFaces[diceIdx]}`;
+
+        if (diceNum === 6) {
+            document.getElementById('gameStatus.innerText') = "🔥 দারুণ! ছক্কা উঠেছে, টোকেন ওপেন করুন!";
+            document.getElementById('gameStatus').style.color = "#2ecc71";
+            userBalance += 5; // বোনাস পয়েন্ট
+            document.getElementById('userBalance').innerText = userBalance;
+        } else {
+            document.getElementById('gameStatus').innerText = `আপনি ${diceNum} পেয়েছেন।`;
+            document.getElementById('gameStatus').style.color = "#f1c40f";
+        }
+        tg.HapticFeedback.impactOccurred('medium');
     }
-    updatePrizePool();
 
     function submitDeposit() {
         let trxId = document.getElementById('trxIdInput').value.trim();
@@ -301,132 +275,15 @@
         }
 
         document.getElementById('depositMsg').innerText = "পাঠানো হচ্ছে...";
-        let message = `📥 নতুন মার্চেন্ট ডিপোজিট রিকোয়েস্ট!\n\n👤 নাম: ${userName}\n🆔 আইডি: ${userId}\n💳 TrxID: ${trxId}`;
+        let message = `📥 নতুন লুডু ডিপোজিট রিকোয়েস্ট!\n\n👤 নাম: ${userName}\n🆔 আইডি: ${userId}\n💳 TrxID: ${trxId}`;
         let url = `https://api.telegram.org/bot${botToken}/sendMessage?chat_id=${adminChatId}&text=` + encodeURIComponent(message);
 
         fetch(url).then(res => res.json()).then(data => {
             if (data.ok) {
-                document.getElementById('depositMsg').innerText = "✅ ডিপোজিট রিকোয়েস্ট পাঠানো হয়েছে!";
-                document.getElementById('depositMsg').style.color = "green";
+                document.getElementById('depositMsg').innerText = "✅ রিকোয়েস্ট সফলভাবে জমা হয়েছে!";
+                document.getElementById('depositMsg').style.color = "#2ecc71";
             }
         });
-    }
-
-    function startMatchmaking() {
-        if (userBalance < currentFee) {
-            alert("আপনার পর্যাপ্ত ব্যালেন্স নেই! দয়া করে আগে ডিপোজিট করুন।");
-            return;
-        }
-
-        userBalance -= currentFee;
-        document.getElementById('userBalance').innerText = userBalance;
-
-        document.getElementById('matchBox').classList.add('hidden');
-        document.getElementById('searchingSection').classList.remove('hidden');
-
-        let botNames = ["Raihan_99", "Tanvir_BD", "Sadia_Akter", "Shakil_Hossen", "Nila_Islam", "Arman_Khan"];
-        let randomBot = botNames[Math.floor(Math.random() * botNames.length)];
-
-        let randomNumber = Math.random(); 
-        willUserWin = randomNumber < 0.30; 
-
-        setTimeout(() => {
-            document.getElementById('searchStatusText').innerText = "✅ প্রতিপক্ষ পাওয়া গেছে!";
-            document.getElementById('foundPlayersList').innerText = `প্রতিপক্ষ: ${randomBot} (Ready)`;
-            
-            tg.HapticFeedback.notificationOccurred('success');
-
-            setTimeout(() => {
-                document.getElementById('searchingSection').classList.add('hidden');
-                document.getElementById('gameSection').classList.remove('hidden');
-                
-                document.getElementById('opponentInfo').innerText = `প্রতিপক্ষ: ${randomBot}`;
-                currentPosition = 0;
-                document.getElementById('position').innerText = currentPosition;
-                document.getElementById('gameStatus').innerText = "গেম শুরু হয়েছে! ছক্কা ফেলুন।";
-            }, 1500);
-
-        }, 3000);
-    }
-
-    function submitWithdraw() {
-        let amount = parseInt(document.getElementById('withdrawAmount').value);
-        let bkashNum = document.getElementById('withdrawBkash').value.trim();
-
-        if (isNaN(amount) || amount < 100) {
-            alert("সর্বনিম্ন ১০০ টাকা উইথড্র করতে পারবেন!");
-            return;
-        }
-        if (amount > userBalance) {
-            alert("পর্যাপ্ত ব্যালেন্স নেই!");
-            return;
-        }
-        if (bkashNum.length < 11) {
-            alert("সঠিক ১১ ডিজিটের বিকাশ নম্বর দিন!");
-            return;
-        }
-
-        document.getElementById('withdrawMsg').innerText = "প্রসেসিং হচ্ছে...";
-        let message = `📤 নতুন উইথড্র রিকোয়েস্ট!\n\n👤 নাম: ${userName}\n🆔 আইডি: ${userId}\n💸 পরিমাণ: ${amount} টাকা\n📱 বিকাশ নম্বর: ${bkashNum}`;
-        let url = `https://api.telegram.org/bot${botToken}/sendMessage?chat_id=${adminChatId}&text=` + encodeURIComponent(message);
-
-        fetch(url).then(res => res.json()).then(data => {
-            if (data.ok) {
-                userBalance -= amount; 
-                document.getElementById('userBalance').innerText = userBalance;
-                document.getElementById('withdrawMsg').innerText = `✅ উইথড্র সফল! ${amount} টাকা কেটে নেওয়া হয়েছে।`;
-                document.getElementById('withdrawMsg').style.color = "green";
-            }
-        });
-    }
-
-    let currentPosition = 0;
-    const winningPos = 30;
-
-    function rollDice() {
-        let dice = Math.floor(Math.random() * 6) + 1;
-        document.getElementById('diceVal').innerText = `🎲 ${dice}`;
-
-        currentPosition += dice;
-
-        if (willUserWin && currentPosition >= winningPos) {
-            currentPosition = winningPos;
-            document.getElementById('position').innerText = currentPosition;
-            document.getElementById('gameStatus').innerText = `🎉 অভিনন্দন! আপনি জিতেছেন এবং ${currentPrize} টাকা আপনার ব্যালেন্সে যোগ হয়েছে!`;
-            document.getElementById('gameStatus').style.color = "green";
-            
-            userBalance += currentPrize;
-            document.getElementById('userBalance').innerText = userBalance;
-
-            setTimeout(() => {
-                document.getElementById('gameSection').classList.add('hidden');
-                document.getElementById('matchBox').classList.remove('hidden');
-            }, 3500);
-
-            return;
-        }
-
-        if (!willUserWin && currentPosition >= 22) {
-            currentPosition = 22;
-            document.getElementById('position').innerText = currentPosition;
-            document.getElementById('gameStatus').innerText = `❌ প্রতিপক্ষ দ্রুত এগিয়ে গিয়ে ম্যাচ জিতে গেছে! আপনি হেরে গেছেন।`;
-            document.getElementById('gameStatus').style.color = "red";
-
-            setTimeout(() => {
-                document.getElementById('gameSection').classList.add('hidden');
-                document.getElementById('matchBox').classList.remove('hidden');
-            }, 4000);
-
-            return;
-        }
-
-        if (currentPosition >= winningPos) {
-            currentPosition = winningPos;
-        }
-
-        document.getElementById('position').innerText = currentPosition;
-        document.getElementById('gameStatus').innerText = `আপনি ${dice} ঘর এগিয়ে গেছেন।`;
-        tg.HapticFeedback.impactOccurred('medium');
     }
 </script>
 
