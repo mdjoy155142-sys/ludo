@@ -14,6 +14,7 @@
             --text-muted: #94a3b8;
             --success: #10b981;
             --danger: #f43f5e;
+            --warning: #f59e0b;
         }
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -26,7 +27,6 @@
             max-width: 420px;
             margin: auto;
         }
-        /* টপ ইউজার প্রোফাইল বার */
         .profile-bar {
             display: flex;
             justify-content: space-between;
@@ -40,22 +40,20 @@
         .user-info h3 { margin: 0; font-size: 16px; color: #38bdf8; }
         .user-info p { margin: 2px 0 0 0; font-size: 12px; color: var(--text-muted); }
         
-        /* ব্যালেন্স কার্ড */
         .wallet-card {
             background: linear-gradient(135deg, #4f46e5, #7c3aed);
             color: #fff;
             padding: 20px;
             border-radius: 16px;
             text-align: center;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
             box-shadow: 0 10px 15px -3px rgba(79, 70, 229, 0.3);
         }
         .wallet-card h2 { margin: 5px 0 0 0; font-size: 28px; }
         .wallet-card span { font-size: 13px; opacity: 0.8; text-transform: uppercase; letter-spacing: 1px; }
 
-        /* সেকশন হেডিং */
         .section-title {
-            font-size: 16px;
+            font-size: 15px;
             font-weight: bold;
             margin: 15px 0 10px 0;
             color: #e2e8f0;
@@ -64,12 +62,11 @@
             gap: 8px;
         }
 
-        /* প্ল্যান কার্ড ডিজাইন */
         .investment-grid {
             display: flex;
             flex-direction: column;
             gap: 12px;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
         }
         .plan-item {
             background: var(--card-bg);
@@ -79,25 +76,49 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            transition: 0.2s;
         }
-        .plan-item:hover { border-color: var(--accent-color); }
-        .plan-details h4 { margin: 0 0 5px 0; font-size: 16px; color: #facc15; }
-        .plan-details p { margin: 2px 0; font-size: 12px; color: var(--text-muted); }
+        .plan-details h4 { margin: 0 0 5px 0; font-size: 15px; color: #facc15; }
+        .plan-details p { margin: 2px 0; font-size: 11px; color: var(--text-muted); }
         
         .btn-invest {
             background: var(--accent-color);
             color: white;
             border: none;
-            padding: 8px 16px;
-            font-size: 13px;
+            padding: 8px 14px;
+            font-size: 12px;
             font-weight: bold;
             border-radius: 8px;
             cursor: pointer;
         }
-        .btn-invest:active { transform: scale(0.95); }
 
-        /* ফর্ম কার্ড (ডিপোজিট ও উইথড্র) */
+        .active-plan-box {
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px dashed var(--success);
+            padding: 12px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            display: none;
+        }
+
+        .history-card {
+            background: var(--card-bg);
+            border: 1px solid #334155;
+            border-radius: 12px;
+            padding: 12px;
+            margin-bottom: 15px;
+            max-height: 140px;
+            overflow-y: auto;
+        }
+        .history-item {
+            display: flex;
+            justify-content: space-between;
+            font-size: 11px;
+            padding: 6px 0;
+            border-bottom: 1px solid #334155;
+        }
+        .history-item:last-child { border-bottom: none; }
+        .history-time { color: var(--text-muted); font-size: 10px; }
+
         .form-card {
             background: var(--card-bg);
             padding: 15px;
@@ -113,36 +134,34 @@
             border: 1px solid #475569;
             border-radius: 8px;
             color: white;
-            font-size: 14px;
+            font-size: 13px;
             box-sizing: border-box;
         }
         .btn-full {
             width: 100%;
-            padding: 11px;
+            padding: 10px;
             border: none;
             border-radius: 8px;
             font-weight: bold;
-            font-size: 14px;
+            font-size: 13px;
             cursor: pointer;
             margin-top: 5px;
         }
         .btn-deposit { background: #e11d48; color: white; }
         .btn-withdraw { background: var(--success); color: white; }
         .btn-refer { background: #d97706; color: white; }
-        
-        .msg-text { font-size: 12px; margin-top: 5px; font-weight: bold; text-align: center; }
+        .msg-text { font-size: 11px; margin-top: 5px; font-weight: bold; text-align: center; }
     </style>
 </head>
 <body>
 
 <div class="app-container">
-    <!-- প্রফেশনাল হেডার -->
     <div class="profile-bar">
         <div class="user-info">
             <h3 id="userName">ইউজার</h3>
             <p>আইডি: <span id="userId">---</span></p>
         </div>
-        <div style="background: #334155; padding: 6px 12px; border-radius: 20px; font-size: 12px; color: #38bdf8; font-weight: bold;">
+        <div style="background: #334155; padding: 5px 10px; border-radius: 20px; font-size: 11px; color: #38bdf8; font-weight: bold;">
             🟢 একটিভ
         </div>
     </div>
@@ -150,16 +169,36 @@
     <!-- ব্যালেন্স কার্ড -->
     <div class="wallet-card">
         <span>টোটাল ব্যালেন্স</span>
-        <h2>৳ <span id="userBalance">1000</span></h2>
+        <h2>৳ <span id="userBalance">100</span></h2>
     </div>
 
-    <!-- ইনভেস্টমেন্ট প্ল্যান লিস্ট -->
+    <div id="activePlanContainer" class="active-plan-box">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <h4 id="activePlanName" style="margin:0; color: var(--success); font-size: 14px;">কোনো প্ল্যান কেনা নেই</h4>
+                <p id="activePlanIncome" style="margin:2px 0 0 0; font-size: 11px; color: var(--text-muted);">প্যাকেজ কিনে দৈনিক আয় করুন</p>
+            </div>
+            <button id="claimBtn" onclick="claimDailyProfit()" style="background: var(--success); color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer; display: none;">টাকা তুলুন</button>
+        </div>
+    </div>
+
+    <div class="section-title">🕒 আয়ের হিস্ট্রি</div>
+    <div class="history-card" id="historyList">
+        <div class="history-item">
+            <div>
+                <div><b>🎁 ওয়েলকাম বোনাস</b></div>
+                <div class="history-time">এখনই প্রাপ্ত</div>
+            </div>
+            <div style="color: var(--success); font-weight: bold; font-size: 12px;">+৳ 100</div>
+        </div>
+    </div>
+
     <div class="section-title">📊 আকর্ষণীয় ইনভেস্টমেন্ট প্ল্যান</div>
     <div class="investment-grid">
         <div class="plan-item">
             <div class="plan-details">
                 <h4>সিলভার প্যাকেজ</h4>
-                <p>মূল্য: <b>৳ ৩০০</b> | দৈনিক আয়: <b>৳ ৩০</b></p>
+                <p>মূল্য: <b>৳ ৩০০</b> | দৈনিক: <b>৳ ৩০</b></p>
                 <p>মেয়াদ: ৩০ দিন</p>
             </div>
             <button class="btn-invest" onclick="buyPlan(300, 30, 'সিলভার প্যাকেজ')">কিনুন</button>
@@ -168,7 +207,7 @@
         <div class="plan-item">
             <div class="plan-details">
                 <h4 style="color: #38bdf8;">গোল্ড প্যাকেজ</h4>
-                <p>মূল্য: <b>৳ ১,০০০</b> | দৈনিক আয়: <b>৳ ১২০</b></p>
+                <p>মূল্য: <b>৳ ১,০০০</b> | দৈনিক: <b>৳ ১২০</b></p>
                 <p>মেয়াদ: ৩০ দিন</p>
             </div>
             <button class="btn-invest" style="background: #0284c7;" onclick="buyPlan(1000, 120, 'গোল্ড প্যাকেজ')">কিনুন</button>
@@ -177,38 +216,40 @@
         <div class="plan-item">
             <div class="plan-details">
                 <h4 style="color: #10b981;">প্লাটিনাম ভিআইপি</h4>
-                <p>মূল্য: <b>৳ ৫,০০০</b> | দৈনিক আয়: <b>৳ ৭০০</b></p>
+                <p>মূল্য: <b>৳ ৫,০০০</b> | দৈনিক: <b>৳ ৭০০</b></p>
                 <p>মেয়াদ: ৩০ দিন</p>
             </div>
             <button class="btn-invest" style="background: #10b981;" onclick="buyPlan(5000, 700, 'প্লাটিনাম ভিআইপি')">কিনুন</button>
         </div>
     </div>
 
-    <!-- ডিপোজিট সেকশন -->
+    <!-- রেফারেল প্রোগ্রাম ইনফো -->
+    <div class="section-title">👥 রেফার ও টিম কমিশন</div>
+    <div class="form-card">
+        <p style="margin: 0 0 4px 0; font-size: 11px; color: #facc15;">• রেফারকৃত বন্ধু ডিপোজিট করলে পাবেন <b>১০% কমিশন</b>!</p>
+        <p style="margin: 0 0 8px 0; font-size: 11px; color: #38bdf8;">• টিমে ১০ জন পূর্ণ হলে আজীবন আয় থেকে পাবেন <b>৫% লাইফটাইম কমিশন</b>!</p>
+        <input type="text" id="referLinkInput" class="form-control" readonly style="font-size: 10px; text-align: center;">
+        <button class="btn-full btn-refer" onclick="shareReferralLink()">রেফার লিংক শেয়ার করুন</button>
+    </div>
+
+    <!-- বিকাশ ডিপোজিট -->
     <div class="section-title">💳 বিকাশ ডিপোজিট</div>
     <div class="form-card">
-        <p style="margin: 0 0 5px 0; font-size: 12px; color: var(--text-muted);">সরাসরি মার্চেন্ট নম্বরে টাকা পাঠিয়ে TrxID দিন:</p>
-        <p style="margin: 0 0 8px 0; font-size: 13px; color: #facc15;">মার্চেন্ট নম্বর: <b>01919130118</b></p>
-        <input type="text" id="trxIdInput" class="form-control" placeholder="বিকাশ TrxID দিন (যেমন: 9N8K7...)">
+        <p style="margin: 0 0 4px 0; font-size: 11px; color: var(--text-muted);">মার্চেন্ট নম্বরে টাকা পাঠিয়ে তথ্য দিন:</p>
+        <p style="margin: 0 0 6px 0; font-size: 12px; color: #facc15;">নম্বর: <b>01919130118</b></p>
+        
+        <input type="number" id="depositAmountInput" class="form-control" placeholder="টাকার পরিমাণ (যেমন: 1000)">
+        <input type="text" id="trxIdInput" class="form-control" placeholder="বিকাশ TrxID দিন">
         <button class="btn-full btn-deposit" onclick="submitDeposit()">ডিপোজিট রিকোয়েস্ট পাঠান</button>
         <div id="depositMsg" class="msg-text"></div>
     </div>
 
-    <!-- উইথড্র সেকশন -->
     <div class="section-title">💸 টাকা উত্তোলন (Withdraw)</div>
     <div class="form-card">
         <input type="number" id="withdrawAmount" class="form-control" placeholder="টাকার পরিমাণ (মিনিমাম ২০০৳)">
-        <input type="text" id="withdrawBkash" class="form-control" placeholder="আপনার বিকাশ পার্সোনাল নম্বর">
+        <input type="text" id="withdrawBkash" class="form-control" placeholder="বিকাশ পার্সোনাল নম্বর">
         <button class="btn-full btn-withdraw" onclick="submitWithdraw()">উইথড্র রিকোয়েস্ট পাঠান</button>
         <div id="withdrawMsg" class="msg-text"></div>
-    </div>
-
-    <!-- রেফারেল সেকশন -->
-    <div class="section-title">👥 বন্ধু রেফার করুন</div>
-    <div class="form-card">
-        <p style="margin: 0 0 5px 0; font-size: 12px; color: var(--text-muted);">প্রতি রেফারে পাবেন ২০ টাকা ইনস্ট্যান্ট বোনাস!</p>
-        <input type="text" id="referLinkInput" class="form-control" readonly style="font-size: 11px; text-align: center;">
-        <button class="btn-full btn-refer" onclick="shareReferralLink()">রেফার লিংক শেয়ার করুন</button>
     </div>
 </div>
 
@@ -227,51 +268,139 @@
 
     const botToken = "8943237412:AAHrUDQbEF9kTWHwi0qJh7S2-axll0UIfcY"; 
     const adminChatId = "7100342395"; 
-    const botUsername = "Ludo88_Bot"; 
+    const botUsername = "Ludo88_Bot";
 
-    let userBalance = 1000;
+    let userBalance = 100;
+    let dailyIncomeAmount = 0;
+    let earningsHistory = [
+        { title: "🎁 ওয়েলকাম বোনাস", amount: "+৳ 100", time: "এখনই প্রাপ্ত", type: "income" }
+    ];
+
     document.getElementById('userBalance').innerText = userBalance;
 
     let userReferLink = `https://t.me/${botUsername}?start=ref_${userId}`;
     document.getElementById('referLinkInput').value = userReferLink;
 
-    let startParam = tg.initDataUnsafe?.start_param;
-    if (startParam && startParam.startsWith("ref_")) {
-        userBalance += 20;
-        document.getElementById('userBalance').innerText = userBalance;
-        alert("🎉 অভিনন্দন! রেফার লিংকে জয়েন করার জন্য ২০ টাকা বোনাস পেয়েছেন।");
-    }
-
     function shareReferralLink() {
-        let telegramShareUrl = `https://t.me/share/url?url=${encodeURIComponent(userReferLink)}&text=${encodeURIComponent("সেরা ইনভেস্টমেন্ট সাইট! একাউন্ট খুললেই দারুণ প্রফিট পান:")}`;
-        window.open(telegramShareUrl, '_blank');
+        if (navigator.share) {
+            navigator.share({
+                title: 'আর্নিং লুডু গেম',
+                text: 'আমার রেফার লিংকে জয়েন করে ইনভেস্ট করুন এবং আয় করুন!',
+                url: userReferLink,
+            }).catch(() => {});
+        } else {
+            navigator.clipboard.writeText(userReferLink);
+            alert("✅ রেফার লিংক কপি হয়ে গেছে!");
+        }
     }
 
     function buyPlan(price, dailyIncome, planName) {
         if (userBalance < price) {
-            alert("আপনার পর্যাপ্ত ব্যালেন্স নেই! দয়া করে আগে ডিপোজিট করুন।");
+            alert("আপনার পর্যাপ্ত ব্যালেন্স নেই! দয়া করে ডিপোজিট করুন।");
             return;
         }
 
         userBalance -= price;
+        dailyIncomeAmount = dailyIncome;
+        
         document.getElementById('userBalance').innerText = userBalance;
-        alert(`✅ সফলভাবে ${planName} কেনা হয়েছে! প্রতিদিন আপনার অ্যাকাউন্টে ${dailyIncome} টাকা করে যোগ হবে।`);
+        
+        document.getElementById('activePlanContainer').style.display = 'block';
+        document.getElementById('activePlanName').innerText = `প্ল্যান: ${planName} (সক্রিয়)`;
+        document.getElementById('activePlanIncome').innerText = `দৈনিক আয়: ৳ ${dailyIncome} (আজকের প্রফিট জমা হয়েছে!)`;
+        document.getElementById('claimBtn').style.display = 'block';
+
+        let now = new Date();
+        let timeString = now.toLocaleDateString('bn-BD') + ' ' + now.toLocaleTimeString('bn-BD', {hour: '2-digit', minute:'2-digit'});
+        
+        earningsHistory.unshift({
+            title: `${planName} কেনা হয়েছে`,
+            amount: `-৳ ${price}`,
+            time: timeString,
+            type: 'expense'
+        });
+        updateHistoryUI();
+
+        alert(`✅ সফলভাবে ${planName} কেনা হয়েছে!`);
         
         let message = `📈 নতুন ইনভেস্টমেন্ট প্ল্যান কেনা হয়েছে!\n\n👤 নাম: ${userName}\n🆔 আইডি: ${userId}\n📦 প্ল্যান: ${planName}\n💵 মূল্য: ${price} টাকা`;
         let url = `https://api.telegram.org/bot${botToken}/sendMessage?chat_id=${adminChatId}&text=` + encodeURIComponent(message);
         fetch(url);
     }
 
+    function claimDailyProfit() {
+        if (dailyIncomeAmount > 0) {
+            userBalance += dailyIncomeAmount;
+            document.getElementById('userBalance').innerText = userBalance;
+            
+            let now = new Date();
+            let timeString = now.toLocaleDateString('bn-BD') + ' ' + now.toLocaleTimeString('bn-BD', {hour: '2-digit', minute:'2-digit'});
+
+            earningsHistory.unshift({
+                title: `ডেইলি প্রফিট ক্লেইম`,
+                amount: `+৳ ${dailyIncomeAmount}`,
+                time: timeString,
+                type: 'income'
+            });
+            updateHistoryUI();
+
+            alert(`🎉 সফল! আজকে আপনার প্যাকেজ থেকে ${dailyIncomeAmount} টাকা মূল ব্যালেন্সে যোগ করা হয়েছে।`);
+            document.getElementById('claimBtn').style.display = 'none';
+            document.getElementById('activePlanIncome').innerText = `আজকের আয় সংগ্রহ করা হয়েছে। কাল আবার করতে পারবেন!`;
+        }
+    }
+
+    function updateHistoryUI() {
+        let historyList = document.getElementById('historyList');
+        if (earningsHistory.length === 0) {
+            historyList.innerHTML = `<div style="text-align: center; color: var(--text-muted); font-size: 11px; padding: 10px;">এখনো কোনো আয়ের রেকর্ড নেই</div>`;
+            return;
+        }
+
+        let html = '';
+        earningsHistory.forEach(item => {
+            let color = item.type === 'income' ? 'var(--success)' : 'var(--danger)';
+            html += `
+                <div class="history-item">
+                    <div>
+                        <div><b>${item.title}</b></div>
+                        <div class="history-time">🕒 ${item.time}</div>
+                    </div>
+                    <div style="color: ${color}; font-weight: bold; font-size: 12px;">${item.amount}</div>
+                </div>
+            `;
+        });
+        historyList.innerHTML = html;
+    }
+
     function submitDeposit() {
+        let depAmount = document.getElementById('depositAmountInput').value.trim();
         let trxId = document.getElementById('trxIdInput').value.trim();
+
+        if (depAmount === "" || isNaN(depAmount) || depAmount <= 0) {
+            alert("সঠিক টাকার পরিমাণ লিখুন!");
+            return;
+        }
         if (trxId === "") {
             alert("সঠিক TrxID লিখুন!");
             return;
         }
 
         document.getElementById('depositMsg').innerText = "প্রসেসিং হচ্ছে...";
-        let message = `📥 নতুন ইনভেস্টমেন্ট ডিপোজিট!\n\n👤 নাম: ${userName}\n🆔 আইডি: ${userId}\n💳 TrxID: ${trxId}`;
-        let url = `https://api.telegram.org/bot${botToken}/sendMessage?chat_id=${adminChatId}&text=` + encodeURIComponent(message);
+        
+        let message = `📥 নতুন ইনভেস্টমেন্ট ডিপোজিট রিকোয়েস্ট!\n\n👤 নাম: ${userName}\n🆔 আইডি: ${userId}\n💰 পরিমাণ: ${depAmount} টাকা\n💳 TrxID: ${trxId}`;
+        
+        // অ্যাডমিনের বটে অ্যাপ্রুভ / রিজেক্ট বাটন যুক্ত করা হলো
+        let inlineButtons = {
+            inline_keyboard: [
+                [
+                    { text: "✅ অ্যাপ্রুভ (Approved)", callback_data: `approve_dep_${userId}_${depAmount}` },
+                    { text: "❌ রিজেক্ট (Rejected)", callback_data: `reject_dep_${userId}` }
+                ]
+            ]
+        };
+
+        let url = `https://api.telegram.org/bot${botToken}/sendMessage?chat_id=${adminChatId}&text=` + encodeURIComponent(message) + `&reply_markup=` + encodeURIComponent(JSON.stringify(inlineButtons));
 
         fetch(url).then(res => res.json()).then(data => {
             if (data.ok) {
@@ -299,15 +428,37 @@
         }
 
         document.getElementById('withdrawMsg').innerText = "প্রসেসিং হচ্ছে...";
+        
         let message = `📤 নতুন উইথড্র রিকোয়েস্ট!\n\n👤 নাম: ${userName}\n🆔 আইডি: ${userId}\n💸 পরিমাণ: ${amount} টাকা\n📱 বিকাশ নম্বর: ${bkashNum}`;
-        let url = `https://api.telegram.org/bot${botToken}/sendMessage?chat_id=${adminChatId}&text=` + encodeURIComponent(message);
+        
+        // উইথড্র অ্যাপ্রুভ / রিজেক্ট বাটন
+        let inlineButtons = {
+            inline_keyboard: [
+                [
+                    { text: "✅ অ্যাপ্রুভ (Approved)", callback_data: `approve_wd_${userId}_${amount}` },
+                    { text: "❌ রিজেক্ট (Rejected)", callback_data: `reject_wd_${userId}` }
+                ]
+            ]
+        };
+
+        let url = `https://api.telegram.org/bot${botToken}/sendMessage?chat_id=${adminChatId}&text=` + encodeURIComponent(message) + `&reply_markup=` + encodeURIComponent(JSON.stringify(inlineButtons));
 
         fetch(url).then(res => res.json()).then(data => {
             if (data.ok) {
                 userBalance -= amount;
                 document.getElementById('userBalance').innerText = userBalance;
-                document.getElementById('withdrawMsg').innerText = `✅ উইথড্র সফল! ${amount} টাকা কেটে নেওয়া হয়েছে।`;
+                document.getElementById('withdrawMsg').innerText = `✅ উইথড্র সফল! রিকোয়েস্ট পাঠানো হয়েছে।`;
                 document.getElementById('withdrawMsg').style.color = "#10b981";
+
+                let now = new Date();
+                let timeString = now.toLocaleDateString('bn-BD') + ' ' + now.toLocaleTimeString('bn-BD', {hour: '2-digit', minute:'2-digit'});
+                earningsHistory.unshift({
+                    title: `উইথড্র রিকোয়েস্ট`,
+                    amount: `-৳ ${amount}`,
+                    time: timeString,
+                    type: 'expense'
+                });
+                updateHistoryUI();
             }
         });
     }
