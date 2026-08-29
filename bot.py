@@ -181,14 +181,14 @@ async def withdraw_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     parts = text.replace("/withdraw", "").strip().split()
     
     if len(parts) < 2:
-        await update.message.reply_text("সঠিক নিয়ম: /withdraw <নম্বর> <পরিমাণ>\nউদাহরণ: /withdraw 01712345678 1200")
+        await update.message.reply_text("সঠিক নিয়ম: /withdraw <নম্বর> <পরিমাণ>\nউদাহরণ: /withdraw 017 1200")
         return
         
     try:
         phone = parts[0]
         amount = float(parts[1])
     except ValueError:
-        await update.message.reply_text("❌ ভুল ফরম্যাট! সঠিক নিয়মে লিখুন: /withdraw <নম্বর> <পরিমাণ>")
+        await update.message.reply_text("❌ ভুল ফরম্যাট! সঠিক নিয়মে লিখুন: /withdraw <নম্বর> <পরিমাণ>\nউদাহরণ: /withdraw 017 1200")
         return
 
     if amount < 1200:
@@ -255,17 +255,15 @@ async def handle_request(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(deposit_msg)
         
     elif "উত্তোলন" in text:
-        # এখানে অতিরিক্ত শর্তের লাইনটি সম্পূর্ণ মুছে দেওয়া হয়েছে
         await update.message.reply_text(
             "উত্তোলন করতে এই নিয়মে লিখুন:\n"
             "/withdraw <নম্বর> <পরিমাণ>\n"
-            "উদাহরণ: /withdraw 01712345678 1200"
+            "উদাহরণ: /withdraw 017 1200"
         )
         
     elif "রেফার" in text or "লিংক" in text:
         ref_link = f"https://t.me/{BOT_USERNAME}?start=ref_{user.id}"
         refs_count = len(user_referrals.get(user.id, []))
-        # এখানেও উত্তোলনের শর্ত সংক্রান্ত বাড়তি লেখা বাদ দেওয়া হয়েছে
         ref_msg = (
             f"🔗 আপনার রেফারেল লিংক:\n{ref_link}\n\n"
             f"প্রতি সফল রেফারে পাবেন **১০০ টাকা** বোনাস!\n"
