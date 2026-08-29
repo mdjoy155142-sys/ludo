@@ -112,7 +112,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
                         save_data()
                         await context.bot.send_message(
                             referrer_id, 
-                            "🎉 অভিনন্দন! আপনার রেফারল লিংকে নতুন একজন ইউজার যুক্ত হয়েছে এবং আপনি সফল রেফার বোনাস হিসেবে ১০০ টাকা পেয়েছেন!"
+                            "🎉 অভিনন্দন! আপনার রেফারল লিংকে নতুন একজন ইউজার যুক্ত হয়েছে এবং আপনি রেফার বোনাস হিসেবে ১০০ টাকা পেয়েছেন!"
                         )
             except ValueError:
                 pass
@@ -202,28 +202,17 @@ async def withdraw_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(error_msg)
         return
 
+    # ন্যূনতম ১টি রেফারের শর্ত চেক করা হচ্ছে
     user_refs = len(user_referrals.get(user.id, []))
-    if user_refs < 5:
+    if user_refs < 1:
         ref_link = f"https://t.me/{BOT_USERNAME}?start=ref_{user.id}"
         await update.message.reply_text(
-            f"❌ টাকা তুলতে হলে আপনার কমপক্ষে **৫টি রেফার** থাকতে হবে!\n"
+            f"❌ টাকা তুলতে হলে আপনার কমপক্ষে **১টি রেফার** থাকতে হবে!\n"
             f"👥 আপনার বর্তমান রেফার: {user_refs} জন\n"
             f"🔗 আপনার রেফার লিংক:\n{ref_link}"
         )
         return
 
-    total_dep = user_total_deposits.get(user.id, 0.0)
-    withdraw_count = user_total_withdrawals.get(user.id, 0)
-    
-    if withdraw_count == 0 and total_dep < 500:
-        needed = 500 - total_dep
-        await update.message.reply_text(
-            f"❌ প্রথমবার টাকা তুলতে হলে আপনার মোট জমা কমপক্ষে ৫০০ টাকা হতে হবে!\n"
-            f"💰 আপনার মোট জমা হয়েছে: {total_dep} টাকা\n"
-            f"⚠️ আরও অন্তত {needed} টাকা জমা (Deposit) করুন।"
-        )
-        return
-    
     pending_withdrawals[user.id] = {"phone": phone, "amount": amount}
     
     keyboard = [
@@ -267,7 +256,7 @@ async def handle_request(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(deposit_msg)
         
     elif "উত্তোলন" in text:
-        await update.message.reply_text("উত্তোলন করতে এই নিয়মে লিখুন:\n/withdraw <নম্বর> <পরিমাণ>\nউদাহরণ: /withdraw 01712345678 1200\n\n*(শর্ত: ১২০০+ টাকা ব্যালেন্স, ৫টি রেফার এবং মোট অন্তত ৫০০ টাকা ডিপোজিট)*")
+        await update.message.reply_text("উত্তোলন করতে এই নিয়মে লিখুন:\n/withdraw <নম্বর> <পরিমাণ>\nউদাহরণ: /withdraw 01712345678 1200\n\n*(শর্ত: ১২০০+ টাকা ব্যালেন্স এবং কমপক্ষে ১টি রেফার থাকতে হবে)*")
         
     elif "রেফার" in text or "লিংক" in text:
         ref_link = f"https://t.me/{BOT_USERNAME}?start=ref_{user.id}"
@@ -275,7 +264,7 @@ async def handle_request(update: Update, context: ContextTypes.DEFAULT_TYPE):
         ref_msg = (
             f"🔗 আপনার রেফারেল লিংক:\n{ref_link}\n\n"
             f"প্রতি সফল রেফারে পাবেন **১০০ টাকা** বোনাস!\n"
-            f"👥 আপনার মোট রেফার: {refs_count} জন (উত্তোলনের জন্য কমপক্ষে ৫টি রেফার প্রয়োজন)"
+            f"👥 আপনার মোট রেফার: {refs_count} জন (উত্তোলনের জন্য কমপক্ষে ১টি রেফার প্রয়োজন)"
         )
         await update.message.reply_text(ref_msg)
 
