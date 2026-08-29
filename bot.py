@@ -108,16 +108,15 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 if referrer_id != user_id and referrer_id in user_balances:
                     if user_id not in user_referrals.get(referrer_id, []):
                         user_referrals[referrer_id].append(user_id)
-                        user_balances[referrer_id] = user_balances.get(referrer_id, 0.0) + 150.0
+                        user_balances[referrer_id] = user_balances.get(referrer_id, 0.0) + 100.0  # রেফার বোনাস ১০০ টাকা
                         save_data()
                         await context.bot.send_message(
                             referrer_id, 
-                            "🎉 অভিনন্দন! আপনার রেফারল লিংকে নতুন একজন ইউজার যুক্ত হয়েছে এবং আপনি রেফার বোনাস হিসেবে ১৫০ টাকা পেয়েছেন!"
+                            "🎉 অভিনন্দন! আপনার রেফারল লিংকে নতুন একজন ইউজার যুক্ত হয়েছে এবং আপনি সফল রেফার বোনাস হিসেবে ১০০ টাকা পেয়েছেন!"
                         )
             except ValueError:
                 pass
     
-    # আপনার নতুন রেন্ডার ওয়েব অ্যাপ লিংক এখানে আপডেট করা হয়েছে
     web_app_url = "https://telegram-bot-hveg.onrender.com"
     
     keyboard_inline = [
@@ -263,8 +262,7 @@ async def handle_request(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "(একাউন্টটি মার্চেন্ট)\n\n"
             "এই নাম্বারে টাকা পাঠিয়ে নিচে দেওয়া নিয়মে সেন্ড করুন:\n"
             "/deposit <পরিমাণ> <ট্রানজেকশন_আইডি>\n\n"
-            "উদাহরণ: /deposit 200 ABC123XYZ\n\n"
-            "*(উল্লেখ্য: আপনি ভেঙে ভেঙেও মোট ৫০০ টাকা জমা করতে পারবেন)*"
+            "উদাহরণ: /deposit 200 ABC123XYZ"
         )
         await update.message.reply_text(deposit_msg)
         
@@ -276,7 +274,7 @@ async def handle_request(update: Update, context: ContextTypes.DEFAULT_TYPE):
         refs_count = len(user_referrals.get(user.id, []))
         ref_msg = (
             f"🔗 আপনার রেফারেল লিংক:\n{ref_link}\n\n"
-            f"প্রতি রেফারে পাবেন **১৫০ টাকা** বোনাস!\n"
+            f"প্রতি সফল রেফারে পাবেন **১০০ টাকা** বোনাস!\n"
             f"👥 আপনার মোট রেফার: {refs_count} জন (উত্তোলনের জন্য কমপক্ষে ৫টি রেফার প্রয়োজন)"
         )
         await update.message.reply_text(ref_msg)
