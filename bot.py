@@ -8,46 +8,40 @@ from telegram.ext import (
     ApplicationBuilder, CallbackQueryHandler, CommandHandler,
     ContextTypes, MessageHandler, filters,
 )
+from pymongo import MongoClient
 
 # লগিং সেটআপ
 logging.basicConfig(format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO)
 
-TOKEN = "8713892015:AAFnzIa_o3Q5o61dqrWwBjhD6TB5Glzz0E4"
+TOKEN = os.environ.get("BOT_TOKEN", "8713892015:AAFnzIa_o3Q5o61dqrWwBjhD6TB5Glzz0E4")
 ADMIN_ID = 7100342395
 BOT_USERNAME = "Fastpay8_bot"
-DATA_FILE = "bot_data.json"
+
+# MongoDB কানেকশন সেটআপ
+MONGO_URI = os.environ.get("MONGO_URI", "mongodb+srv://admin:Bashar904@cluster0.nkm8mxx.mongodb.net/?appName=Cluster0")
+client = MongoClient(MONGO_URI)
+db = client["telegram_bot_db"]
+users_collection = db["users"]
 
 pending_withdrawals = {}
 
-# ডাটা লোড ও সেভ ফাংশন
-def load_data():
-    if os.path.exists(DATA_FILE):
-        with open(DATA_FILE, "r", encoding="utf-8") as f:
-            try:
-                data = json.load(f)
-                return (
-                    {int(k): v for k, v in data.get("balances", {}).items()}, 
-                    {int(k): v for k, v in data.get("referrals", {}).items()},
-                    {int(k): v for k, v in data.get("total_deposits", {}).items()}, 
-                    {int(k): v for k, v in data.get("total_withdrawals", {}).items()}
-                )
-            except Exception as e:
-                logging.error(f"Error loading data: {e}")
-    return {}, {}, {}, {}
+# ডাটা ফেচ বা পাওয়ার ফাংশন
+def get_user_data(user_id):
+    user_data = users_collection.find_one({"user_id": user_id})
+    if not user_data:
+        # নতুন ইউজার হলে ডিফল্ট ডাটা তৈরি হবে
+        user_data = {
+            "user_id": user_id,
+            "balance": 150.0,
+            "referrals": [],
+            "total_deposit": 0.0,
+            "total_withdrawal": 0
+        }
+        users_collection.insert_one(user_data)
+    return user_data
 
-def save_data():
-    try:
-        with open(DATA_FILE, "w", encoding="utf-8") as f:
-            json.dump({
-                "balances": user_balances, 
-                "referrals": user_referrals, 
-                "total_deposits": user_total_deposits,
-                "total_withdrawals": user_total_withdrawals
-            }, f, ensure_ascii=False, indent=4)
-    except Exception as e:
-        logging.error(f"Error saving data: {e}")
-
-user_balances, user_referrals, user_total_deposits, user_total_withdrawals = load_data()
+def update_user_field(user_id, update_data):
+    users_collection.update_one({"user_id": user_id}, {"$set": update_data}, upsert=True)
 
 # --- ফ্লাস্ক (Flask) ওয়েব সার্ভার সেটআপ (মিনি অ্যাপের জন্য) ---
 app = Flask(__name__)
@@ -58,8 +52,8 @@ def index():
 
 @app.route('/get_balance/<int:user_id>')
 def get_balance(user_id):
-    balance = user_balances.get(user_id, 150.0)
-    return jsonify({"status": "success", "balance": balance})
+    user_data = get_user_data(user_id)
+    return jsonify({"status": "success", "balance": user_data.get("balance", 150.0)})
 
 @app.route('/update_balance', methods=['POST'])
 def update_balance():
@@ -68,14 +62,14 @@ def update_balance():
         user_id = int(data.get("user_id"))
         amount_diff = float(data.get("amount_diff"))
         
-        current_balance = user_balances.get(user_id, 150.0)
+        user_data = get_user_data(user_id)
+        current_balance = user_data.get("balance", 150.0)
         new_balance = current_balance + amount_diff
         
         if new_balance < 0:
             new_balance = 0.0
             
-        user_balances[user_id] = new_balance
-        save_data()
+        update_user_field(user_id, {"balance": new_balance})
         
         return jsonify({"status": "success", "new_balance": new_balance})
     except Exception as e:
@@ -91,25 +85,35 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     user_id = user.id
     
+    user_data = users_collection.find_one({"user_id": user_id})
     is_new_user = False
-    if user_id not in user_balances:
-        user_balances[user_id] = 150.0
-        user_referrals[user_id] = []
-        user_total_deposits[user_id] = 0.0
-        user_total_withdrawals[user_id] = 0
+    
+    if not user_data:
+        user_data = {
+            "user_id": user_id,
+            "balance": 150.0,
+            "referrals": [],
+            "total_deposit": 0.0,
+            "total_withdrawal": 0
+        }
+        users_collection.insert_one(user_data)
         is_new_user = True
-        save_data()
         
     if context.args and is_new_user:
         payload = context.args[0]
         if payload.startswith("ref_"):
             try:
                 referrer_id = int(payload.split("_")[1])
-                if referrer_id != user_id and referrer_id in user_balances:
-                    if user_id not in user_referrals.get(referrer_id, []):
-                        user_referrals[referrer_id].append(user_id)
-                        user_balances[referrer_id] = user_balances.get(referrer_id, 0.0) + 100.0  # রেফার বোনাস ১০০ টাকা
-                        save_data()
+                if referrer_id != user_id:
+                    ref_user = get_user_data(referrer_id)
+                    referrals_list = ref_user.get("referrals", [])
+                    if user_id not in referrals_list:
+                        referrals_list.append(user_id)
+                        new_ref_balance = ref_user.get("balance", 0.0) + 100.0
+                        update_user_field(referrer_id, {
+                            "referrals": referrals_list,
+                            "balance": new_ref_balance
+                        })
                         await context.bot.send_message(
                             referrer_id, 
                             "🎉 অভিনন্দন! আপনার রেফারল লিংকে নতুন একজন ইউজার যুক্ত হয়েছে এবং আপনি রেফার বোনাস হিসেবে ১০০ টাকা পেয়েছেন!"
@@ -117,7 +121,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
             except ValueError:
                 pass
     
-    web_app_url = "https://telegram-bot-hveg.onrender.com"
+    web_app_url = "https://telegram-bot-oh28.onrender.com"
     
     keyboard_inline = [
         [InlineKeyboardButton("🎮 গেম খেলুন (Mini App)", web_app={"url": web_app_url})]
@@ -195,14 +199,16 @@ async def withdraw_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("❌ মিনিমাম উত্তোলন ১২০০ টাকা।")
         return
         
-    current_balance = user_balances.get(user.id, 0.0)
+    user_data = get_user_data(user.id)
+    current_balance = user_data.get("balance", 0.0)
+    
     if current_balance < amount:
         ref_link = f"https://t.me/{BOT_USERNAME}?start=ref_{user.id}"
         error_msg = f"❌ আপনার পর্যাপ্ত পরিমাণে টাকা নাই!\n🔗 বেশি বেশি রেফার করে আয় করুন:\n{ref_link}"
         await update.message.reply_text(error_msg)
         return
 
-    user_refs = len(user_referrals.get(user.id, []))
+    user_refs = len(user_data.get("referrals", []))
     if user_refs < 1:
         ref_link = f"https://t.me/{BOT_USERNAME}?start=ref_{user.id}"
         await update.message.reply_text(
@@ -227,21 +233,22 @@ async def handle_request(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
     text = update.message.text.strip()
     user = update.effective_user
+    user_data = get_user_data(user.id)
     
     if "প্রোফাইল" in text:
-        refs_count = len(user_referrals.get(user.id, []))
-        total_dep = user_total_deposits.get(user.id, 0.0)
+        refs_count = len(user_data.get("referrals", []))
+        total_dep = user_data.get("total_deposit", 0.0)
         profile_text = (
             f"👤 প্রোফাইল\n"
             f"🆔 আইডি: {user.id}\n"
-            f"💰 ব্যালেন্স: {user_balances.get(user.id, 150.0)} টাকা\n"
+            f"💰 ব্যালেন্স: {user_data.get('balance', 150.0)} টাকা\n"
             f"📥 মোট জমা: {total_dep} টাকা\n"
             f"👥 মোট রেফার: {refs_count} জন"
         )
         await update.message.reply_text(profile_text)
         
     elif "ব্যালেন্স" in text:
-        await update.message.reply_text(f"💰 বর্তমান ব্যালেন্স: {user_balances.get(user.id, 150.0)} টাকা")
+        await update.message.reply_text(f"💰 বর্তমান ব্যালেন্স: {user_data.get('balance', 150.0)} টাকা")
         
     elif "জমা" in text:
         deposit_msg = (
@@ -263,7 +270,7 @@ async def handle_request(update: Update, context: ContextTypes.DEFAULT_TYPE):
         
     elif "রেফার" in text or "লিংক" in text:
         ref_link = f"https://t.me/{BOT_USERNAME}?start=ref_{user.id}"
-        refs_count = len(user_referrals.get(user.id, []))
+        refs_count = len(user_data.get("referrals", []))
         ref_msg = (
             f"🔗 আপনার রেফারেল লিংক:\n{ref_link}\n\n"
             f"প্রতি সফল রেফারে পাবেন **১০০ টাকা** বোনাস!\n"
@@ -313,24 +320,26 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
     target_id = int(data_parts[2])
     amount = float(data_parts[3])
     
+    user_data = get_user_data(target_id)
+    
     if action_type == "dep":
         if status == "approve":
-            user_balances[target_id] = user_balances.get(target_id, 150.0) + amount
-            user_total_deposits[target_id] = user_total_deposits.get(target_id, 0.0) + amount
-            save_data()
+            new_bal = user_data.get("balance", 150.0) + amount
+            new_dep = user_data.get("total_deposit", 0.0) + amount
+            update_user_field(target_id, {"balance": new_bal, "total_deposit": new_dep})
             
-            total_d = user_total_deposits[target_id]
-            await query.edit_message_text(f"✅ জমা এপ্রুভ করা হয়েছে। (ইউজার: {target_id}, মোট জমা: {total_d} টাকা)")
-            await context.bot.send_message(target_id, f"🎉 অভিনন্দন! আপনার {amount} টাকা জমা এপ্রুভ হয়েছে। (আপনার মোট জমা: {total_d} টাকা)")
+            await query.edit_message_text(f"✅ জমা এপ্রুভ করা হয়েছে। (ইউজার: {target_id}, মোট জমা: {new_dep} টাকা)")
+            await context.bot.send_message(target_id, f"🎉 অভিনন্দন! আপনার {amount} টাকা জমা এপ্রুভ হয়েছে। (আপনার মোট জমা: {new_dep} টাকা)")
         else:
             await query.edit_message_text("❌ জমা রিজেক্ট করা হয়েছে।")
             await context.bot.send_message(target_id, f"❌ দুঃখিত, আপনার {amount} টাকা জমার রিকোয়েস্টটি বাতিল করা হয়েছে।")
             
     elif action_type == "wit":
         if status == "approve":
-            user_balances[target_id] = max(0.0, user_balances.get(target_id, 150.0) - amount)
-            user_total_withdrawals[target_id] = user_total_withdrawals.get(target_id, 0) + 1
-            save_data()
+            new_bal = max(0.0, user_data.get("balance", 150.0) - amount)
+            new_wit = user_data.get("total_withdrawal", 0) + 1
+            update_user_field(target_id, {"balance": new_bal, "total_withdrawal": new_wit})
+            
             await query.edit_message_text(f"✅ উত্তোলন এপ্রুভ করা হয়েছে। (ইউজার: {target_id})")
             await context.bot.send_message(target_id, f"✅ আপনার {amount} টাকা উত্তোলন সফল হয়েছে এবং পেমেন্ট দেওয়া হয়েছে!")
         else:
@@ -350,7 +359,7 @@ def main():
     app_bot.add_handler(CallbackQueryHandler(button_click))
     app_bot.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_request))
     
-    print("বট এবং ফ্লাস্ক সার্ভার সফলভাবে চালু হয়েছে...")
+    print("বট এবং ফ্লাস্ক সার্ভার সফলভাবে MongoDB ডাটাবেস সহ চালু হয়েছে...")
     app_bot.run_polling()
 
 if __name__ == "__main__":
