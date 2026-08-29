@@ -208,22 +208,40 @@ async def withdraw_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_data = get_user_data(user.id)
     current_balance = user_data.get("balance", 0.0)
     
+    # শর্ত ১: পর্যাপ্ত ব্যালেন্স চেক
     if current_balance < amount:
         ref_link = f"https://t.me/{BOT_USERNAME}?start=ref_{user.id}"
         error_msg = f"❌ আপনার পর্যাপ্ত পরিমাণে টাকা নাই!\n🔗 বেশি বেশি রেফার করে আয় করুন:\n{ref_link}"
         await update.message.reply_text(error_msg)
         return
 
-    user_refs = len(user_data.get("referrals", []))
-    if user_refs < 1:
+    # শর্ত ২: ন্যূনতম ২ টি রেফার চেক
+    referrals_list = user_data.get("referrals", [])
+    if len(referrals_list) < 2:
         ref_link = f"https://t.me/{BOT_USERNAME}?start=ref_{user.id}"
-        await update.message.reply_text(
-            f"❌ টাকা তুলতে হলে আপনার কমপক্ষে **১টি রেফার** থাকতে হবে!\n"
-            f"👥 আপনার বর্তমান রেফার: {user_refs} জন\n"
-            f"🔗 আপনার রেফার লিংক:\n{ref_link}"
+        ref_error_msg = (
+            "❌ টাকা উত্তোলন করতে হলে আপনার অ্যাকাউন্টে কমপক্ষে **২ টি সফল রেফার (Referral)** থাকতে হবে!\n\n"
+            f"👥 আপনার বর্তমান রেফার: {len(referrals_list)} জন\n\n"
+            f"🔗 আপনার রেফারেল লিংক:\n{ref_link}"
         )
+        await update.message.reply_text(ref_error_msg)
         return
 
+    # শর্ত ৩: ন্যূনতম ৫০০ টাকা ডিপোজিট চেক
+    total_dep = user_data.get("total_deposit", 0.0)
+    if total_dep < 500:
+        deposit_msg = (
+            "❌ টাকা উত্তোলন করতে হলে আপনার অ্যাকাউন্টে কমপক্ষে **৫০০ টাকা জমা (Deposit)** করতে হবে!\n\n"
+            "📥 টাকা জমা করার নিয়ম:\n"
+            "আমাদের বিকাশ (Merchant) পেমেন্ট নম্বর: `01919130118`\n"
+            "টাকা পাঠিয়ে নিচের নিয়মে সেন্ড করুন:\n"
+            "/deposit <পরিমাণ> <ট্রানজেকশন_আইডি>\n"
+            "উদাহরণ: /deposit 500 ABC123XYZ"
+        )
+        await update.message.reply_text(deposit_msg)
+        return
+
+    # সব শর্ত পূরণ হলে উইথড্র মাধ্যম সিলেক্ট করার অপশন দেওয়া
     pending_withdrawals[user.id] = {"phone": phone, "amount": amount}
     
     keyboard = [
