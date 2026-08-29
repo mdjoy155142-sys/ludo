@@ -471,10 +471,10 @@
 
         function submitWithdraw() {
             let phone = document.getElementById("witPhone").value;
-            let amount = document.getElementById("witAmount.value");
+            let amount = document.getElementById("witAmount").value; // এখানে ডট (.) ঠিক করা হয়েছে
             if (!phone || !amount) { alert("বিকাশ নম্বর ও পরিমাণ প্রদান করুন!"); return; }
             window.open(`https://t.me/Fastpay8_bot?text=/withdraw%20${phone}%20${amount}`, '_blank');
         }
     </script>
 </body>
-  </html>
+</html>
