@@ -13,7 +13,8 @@ from pymongo import MongoClient
 # লগিং সেটআপ
 logging.basicConfig(format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO)
 
-TOKEN = os.environ.get("BOT_TOKEN", "8713892015:AAFnzIa_o3Q5o61dqrWwBjhD6TB5Glzz0E4")
+# এনভায়রনমেন্ট ভেরিয়েবল থেকে টোকেন এবং ডাটাবেস লিংক নেওয়া
+TOKEN = os.environ.get("BOT_TOKEN", "8713892015:AAFez0mngDbYsAxsl-aE0fQOJqnnvHh5_K8")
 ADMIN_ID = 7100342395
 BOT_USERNAME = "Fastpay8_bot"
 
@@ -29,7 +30,6 @@ pending_withdrawals = {}
 def get_user_data(user_id):
     user_data = users_collection.find_one({"user_id": user_id})
     if not user_data:
-        # নতুন ইউজার হলে ডিফল্ট ডাটা তৈরি হবে
         user_data = {
             "user_id": user_id,
             "balance": 150.0,
