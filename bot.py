@@ -34,6 +34,7 @@ def get_user_data(user_id):
             "user_id": user_id,
             "balance": 150.0,
             "referrals": [],
+            "referred_by": None,  # এফিলিয়েটের জন্য কে কার মাধ্যমে এসেছে তা ট্র্যাক করতে
             "total_deposit": 0.0,
             "total_withdrawal": 0
         }
@@ -93,6 +94,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "user_id": user_id,
             "balance": 150.0,
             "referrals": [],
+            "referred_by": None,
             "total_deposit": 0.0,
             "total_withdrawal": 0
         }
@@ -110,10 +112,14 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     if user_id not in referrals_list:
                         referrals_list.append(user_id)
                         new_ref_balance = ref_user.get("balance", 0.0) + 100.0
+                        
+                        # রেফারার সেভ করা এবং যার মাধ্যমে এসেছে তাকে রেকর্ড করা
                         update_user_field(referrer_id, {
                             "referrals": referrals_list,
                             "balance": new_ref_balance
                         })
+                        update_user_field(user_id, {"referred_by": referrer_id})
+                        
                         await context.bot.send_message(
                             referrer_id, 
                             "🎉 অভিনন্দন! আপনার রেফারল লিংকে নতুন একজন ইউজার যুক্ত হয়েছে এবং আপনি রেফার বোনাস হিসেবে ১০০ টাকা পেয়েছেন!"
@@ -273,7 +279,7 @@ async def handle_request(update: Update, context: ContextTypes.DEFAULT_TYPE):
         refs_count = len(user_data.get("referrals", []))
         ref_msg = (
             f"🔗 আপনার রেফারেল লিংক:\n{ref_link}\n\n"
-            f"প্রতি সফল রেফারে পাবেন **১০০ টাকা** বোনাস!\n"
+            f"🎁 প্রতি সফল রেফারে পাবেন ১০০ টাকা বোনাস এবং আপনার রেফার করা কেউ ডিপোজিট করলে পাবেন **১০% এফিলিয়েট কমিশন**!\n"
             f"👥 আপনার মোট রেফার: {refs_count} জন"
         )
         await update.message.reply_text(ref_msg)
@@ -327,6 +333,26 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
             new_bal = user_data.get("balance", 150.0) + amount
             new_dep = user_data.get("total_deposit", 0.0) + amount
             update_user_field(target_id, {"balance": new_bal, "total_deposit": new_dep})
+            
+            # --- এফিলিয়েট কমিশন (১০%) লজিক ---
+            referrer_id = user_data.get("referred_by")
+            if referrer_id:
+                commission = amount * 0.10  # জমার ওপর ১০% কমিশন
+                ref_user_data = get_user_data(referrer_id)
+                ref_new_bal = ref_user_data.get("balance", 0.0) + commission
+                
+                # রেফারারের ব্যালেন্স আপডেট করা
+                update_user_field(referrer_id, {"balance": ref_new_bal})
+                
+                # রেফারারকে নোটিফিকেশন পাঠানো
+                try:
+                    await context.bot.send_message(
+                        referrer_id, 
+                        f"🤝 অভিনন্দন! আপনার এফিলিয়েট ইউজার ডিপোজিট করার কারণে আপনি ১০% কমিশন অর্থাৎ **{commission} টাকা** বোনাস পেয়েছেন!"
+                    )
+                except Exception:
+                    pass
+            # -----------------------------------
             
             await query.edit_message_text(f"✅ জমা এপ্রুভ করা হয়েছে। (ইউজার: {target_id}, মোট জমা: {new_dep} টাকা)")
             await context.bot.send_message(target_id, f"🎉 অভিনন্দন! আপনার {amount} টাকা জমা এপ্রুভ হয়েছে। (আপনার মোট জমা: {new_dep} টাকা)")
