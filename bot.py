@@ -1,4 +1,4 @@
-Import logging
+import logging
 import json
 import os
 import threading
@@ -28,7 +28,7 @@ users_collection = db["users"]
 
 pending_withdrawals = {}
 
-# ডাটা ফেচ বা পাওয়ার ফাংশন
+# ডাটা ফেচ বা পাওয়ার ফাংশন (নতুন ইউজার হলে স্বয়ংক্রিয়ভাবে ডাটা তৈরি করবে)
 def get_user_data(user_id):
     user_data = users_collection.find_one({"user_id": user_id})
     if not user_data:
@@ -41,7 +41,8 @@ def get_user_data(user_id):
             "total_withdrawal": 0,
             "last_task_date": None,
             "task_streak": 0,
-            "task_cycle_start": None
+            "task_cycle_start": None,
+            "bonus_claimed": False
         }
         users_collection.insert_one(user_data)
     return user_data
@@ -81,7 +82,6 @@ HTML_TEMPLATE = """
         .history-bar { display: flex; gap: 5px; justify-content: center; overflow-x: auto; margin-bottom: 8px; padding: 4px; }
         .history-tag { background: #334155; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; color: #38bdf8; }
 
-        /* লাইভ নোটিফিকেশন বার স্টাইল */
         .notification-bar {
             background: linear-gradient(90deg, #1e293b, #334155);
             border-left: 4px solid #22c55e;
@@ -102,7 +102,6 @@ HTML_TEMPLATE = """
     </style>
 </head>
 <body>
-    <!-- লাইভ নোটিফিকেশন বার -->
     <div class="notification-bar">
         <span class="noti-icon">🔔</span>
         <div class="noti-text" id="notiText">পেমেন্ট প্রুফ লোড হচ্ছে...</div>
@@ -112,7 +111,6 @@ HTML_TEMPLATE = """
         <h4>💰 মূল ব্যালেন্স: <span id="balanceText">0.00</span> টাকা</h4>
     </div>
 
-    <!-- গেম লবি -->
     <div id="gameLobby" class="game-section active-section box">
         <h3>🎮 প্রো গেম জোন</h3>
         <div class="game-grid" id="gameGrid">
@@ -123,7 +121,6 @@ HTML_TEMPLATE = """
         </div>
     </div>
 
-    <!-- ১. রকেট ক্র্যাশ -->
     <div id="rocketGame" class="game-section box">
         <button class="back-btn" onclick="closeGame()">⬅ ব্যাক</button>
         <h3 style="margin:0;">🚀 রকেট ক্র্যাশ</h3>
@@ -135,7 +132,6 @@ HTML_TEMPLATE = """
         <button class="btn" id="rocketBtn" onclick="toggleRocketGame()">বেট নিশ্চিত করুন</button>
     </div>
 
-    <!-- ২. স্লট মেশিন -->
     <div id="slotsGame" class="game-section box">
         <button class="back-btn" onclick="closeGame()">⬅ ব্যাক</button>
         <h3 style="margin:0;">🎰 স্লট মেশিন (৩×৩ ঘর)</h3>
@@ -154,7 +150,6 @@ HTML_TEMPLATE = """
         <button class="btn" id="slotsBtn" onclick="playSlotsGame()">স্লট ঘোড়ান</button>
     </div>
 
-    <!-- ৩. বক্সিং কিং স্লট -->
     <div id="boxingGame" class="game-section box">
         <button class="back-btn" onclick="closeGame()">⬅ ব্যাক</button>
         <h3 style="margin:0; color: #f59e0b;">🥊 বক্সিং কিং স্লট</h3>
@@ -166,7 +161,6 @@ HTML_TEMPLATE = """
         <button class="btn" onclick="playBoxingGame()" style="background: #ef4444; color: #fff;">🥊 বক্সিং স্পিন করুন</button>
     </div>
 
-    <!-- ৪. লাকি স্পিন হুইল -->
     <div id="spinGame" class="game-section box">
         <button class="back-btn" onclick="closeGame()">⬅ ব্যাক</button>
         <h3 style="margin:0; color: #38bdf8;">🎡 লাকি স্পিন হুইল</h3>
@@ -176,7 +170,6 @@ HTML_TEMPLATE = """
         <button class="btn" id="spinBtn" onclick="playRealWheel()">চাকা ঘোরান</button>
     </div>
 
-    <!-- টাকা উত্তোলন -->
     <div class="box">
         <h3>📤 টাকা উত্তোলন</h3>
         <input type="text" id="witPhone" placeholder="বিকাশ নম্বর">
@@ -239,7 +232,6 @@ HTML_TEMPLATE = """
             document.getElementById('gameLobby').classList.add('active-section');
         }
 
-        // --- অটো ইউজারনেম নোটিফিকেশন সিস্টেম ---
         const usernames = ["rahim_99", "karim_bd", "tanvir_x", "sakib_pro", "fahim_77", "imon_vip", "hasan_sk", "shanto_007", "nabil_11", "arif_king", "joy_gamer", "fahad_ff", "rifat_999", "mehedi_24", "tanim_boss"];
         const gamesList = ["রকেট ক্র্যাশ", "স্লট মেশিন", "লাকি স্পিন", "বক্সিং কিং"];
         const paymentMethods = ["বিকাশ", "নগদ", "রকেট"];
@@ -271,7 +263,6 @@ HTML_TEMPLATE = """
         }
         setInterval(updateNotifications, 4000);
 
-        // --- রকেট গেম ---
         const rocketCanvas = document.getElementById('rocketCanvas');
         const rctx = rocketCanvas.getContext('2d');
         let rocketState = "WAITING", multiplier = 1.00, crashAt = 1.00, rocketBetVal = 0, hasRocketBet = false, isRocketRunning = false, rx = 20, ry = 150;
@@ -390,7 +381,6 @@ HTML_TEMPLATE = """
             }
         }
 
-        // --- স্লট মেশিন ---
         const slotsCanvas = document.getElementById('slotsCanvas');
         const slotCtx = slotsCanvas.getContext('2d');
 
@@ -444,7 +434,6 @@ HTML_TEMPLATE = """
             }, 70);
         }
 
-        // --- বক্সিং কিং স্লট ---
         const boxingCanvas = document.getElementById('boxingCanvas');
         const bCtx = boxingCanvas.getContext('2d');
         function drawBoxing(symbols, text) {
@@ -481,7 +470,6 @@ HTML_TEMPLATE = """
             }, 70);
         }
 
-        // --- লাকি স্পিন হুইল ---
         const wheelCanvas = document.getElementById('realWheelCanvas');
         const wCtx = wheelCanvas.getContext('2d');
         const slices = [
@@ -604,7 +592,8 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "total_withdrawal": 0,
             "last_task_date": None,
             "task_streak": 0,
-            "task_cycle_start": None
+            "task_cycle_start": None,
+            "bonus_claimed": False
         }
         users_collection.insert_one(user_data)
         is_new_user = True
@@ -639,6 +628,12 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         [InlineKeyboardButton("🎮 গেম খেলুন (Mini App)", web_app={"url": web_app_url})],
         [InlineKeyboardButton("👨‍💻 লাইভ সাপোর্ট (Live Support)", url=support_url)]
     ]
+    
+    current_balance = user_data.get("balance", 150.0)
+    bonus_claimed = user_data.get("bonus_claimed", False)
+    if current_balance < 100 and not bonus_claimed:
+        keyboard_inline.insert(0, [InlineKeyboardButton("🎁 বোনাস নিন (৩০০ টাকা)", callback_data="claim_special_bonus")])
+
     reply_markup_inline = InlineKeyboardMarkup(keyboard_inline)
     
     keyboard = [
@@ -649,7 +644,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     ]
     
     await update.message.reply_text(
-        f"স্বাগতম, {user.first_name}! ওয়েলকাম বোনাস হিসেবে আপনি পেয়েছেন ১৫০ টাকা। অপশন বেছে নিন:", 
+        f"স্বাগতম, {user.first_name}! ওয়েলকাম বোনাস হিসেবে আপনি পেয়েছেন {current_balance} টাকা। অপশন বেছে নিন:", 
         reply_markup=ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
     )
     await update.message.reply_text(
@@ -769,10 +764,49 @@ async def userlist_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except Exception as e:
         await update.message.reply_text(f"❌ সমস্যা: {str(e)}")
 
+# --- নতুন ব্রডকাস্ট কমান্ড (সবার কাছে নোটিফিকেশন পাঠানোর জন্য) ---
+async def broadcast_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user = update.effective_user
+    if user.id != ADMIN_ID:
+        return
+
+    message_text = update.message.text.replace("/broadcast", "").strip()
+    if not message_text:
+        await update.message.reply_text("❌ সঠিক নিয়মে লিখুন:\n`/broadcast আপনার নোটিফিকেশন মেসেজ`", parse_mode="Markdown")
+        return
+
+    try:
+        all_users = users_collection.find({}, {"user_id": 1})
+        success_count = 0
+        fail_count = 0
+
+        await update.message.reply_text("⏳ সবার কাছে নোটিফিকেশন পাঠানো শুরু হয়েছে, অনুগ্রহ করে অপেক্ষা করুন...")
+
+        for u in all_users:
+            target_user_id = u.get("user_id")
+            try:
+                await context.bot.send_message(
+                    chat_id=target_user_id,
+                    text=f"📢 **অফিসিয়াল নোটিফিকেশন**\n\n{message_text}",
+                    parse_mode="Markdown"
+                )
+                success_count += 1
+            except Exception as e:
+                fail_count += 1
+
+        await update.message.reply_text(
+            f"✅ **ব্রডকাস্ট সম্পন্ন!**\n\n"
+            f"📤 সফলভাবে পাঠানো হয়েছে: {success_count} জন\n"
+            f"❌ ব্যর্থ হয়েছে: {fail_count} জন"
+        )
+    except Exception as e:
+        await update.message.reply_text(f"❌ সমস্যা হয়েছে: {str(e)}")
+
 async def handle_request(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not update.message or not update.message.text: return
     text = update.message.text.strip()
     user = update.effective_user
+    
     user_data = get_user_data(user.id)
     
     if "প্রোফাইল" in text:
@@ -825,6 +859,32 @@ async def handle_request(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
+    
+    if query.data == "claim_special_bonus":
+        user_id = query.from_user.id
+        user_data = get_user_data(user_id)
+        
+        if user_data.get("bonus_claimed", False):
+            await query.edit_message_text("❌ আপনি ইতিমধ্যে এই বোনাসটি গ্রহণ করেছেন!")
+            return
+            
+        current_balance = user_data.get("balance", 0.0)
+        if current_balance < 100:
+            new_balance = current_balance + 300.0
+            update_user_field(user_id, {"balance": new_balance, "bonus_claimed": True})
+            
+            web_app_url = "https://telegram-bot-oh28.onrender.com"
+            support_url = f"https://t.me/{SUPPORT_USERNAME}"
+            new_keyboard = [
+                [InlineKeyboardButton("🎮 গেম খেলুন (Mini App)", web_app={"url": web_app_url})],
+                [InlineKeyboardButton("👨‍💻 লাইভ সাপোর্ট (Live Support)", url=support_url)]
+            ]
+            await query.edit_message_reply_markup(reply_markup=InlineKeyboardMarkup(new_keyboard))
+            await query.message.reply_text(f"🎉 অভিনন্দন! সফলভাবে ৩০০ টাকা বোনাস পেয়েছেন। নতুন ব্যালেন্স: {new_balance} টাকা।")
+        else:
+            await query.edit_message_text("❌ আপনার ব্যালেন্স ১০০ টাকার বেশি থাকায় এই বোনাস প্রযোজ্য নয়።")
+        return
+
     data_parts = query.data.split("_")
     
     if data_parts[0] == "method":
@@ -870,10 +930,11 @@ def main():
     app_bot.add_handler(CommandHandler("withdraw", withdraw_command))
     app_bot.add_handler(CommandHandler("totalusers", total_users_command))
     app_bot.add_handler(CommandHandler("userlist", userlist_command))
+    app_bot.add_handler(CommandHandler("broadcast", broadcast_command))  # ব্রডকাস্ট কমান্ড হ্যান্ডলার
     app_bot.add_handler(CallbackQueryHandler(button_click))
     app_bot.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_request))
     
-    print("বট এবং ফ্লাস্ক সার্ভার লাইভ নোটিফিকেশন বার সহ চালু হয়েছে...")
+    print("বট এবং ফ্লাস্ক সার্ভার ব্রডকাস্ট এবং লাইভ নোটিফিকেশন বার সহ চালু হয়েছে...")
     app_bot.run_polling()
 
 if __name__ == "__main__":
