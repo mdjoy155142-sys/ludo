@@ -783,8 +783,7 @@ async def handle_request(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif "ব্যালেন্স" in text:
         await update.message.reply_text(f"💰 বর্তমান ব্যালেন্স: {round(user_data.get('balance', 150.0), 2)} টাকা")
     elif "জমা" in text:
-        # বিকাশ মার্চেন্ট নম্বর এখানে আপডেট করা হয়েছে
-        await update.message.reply_text("📥 টাকা জমা করুন:\nবিকাশ মার্চেন্ট নম্বর: `01919130118`\nনিয়ম: /deposit <পরিমাণ> <TrxID>")
+        await update.message.reply_text("📥 টাকা জমা করুন:\nবিকাশ নম্বর: `01919130118`\nনিয়ম: /deposit <পরিমাণ> <TrxID>")
     elif "উত্তোলন" in text:
         await update.message.reply_text("উত্তোলন নিয়ম: /withdraw <নম্বর> <পরিমাণ>")
     elif "রেফার" in text or "লিংক" in text:
