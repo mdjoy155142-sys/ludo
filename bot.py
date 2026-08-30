@@ -17,7 +17,7 @@ logging.basicConfig(format="%(asctime)s - %(name)s - %(levelname)s - %(message)s
 TOKEN = os.environ.get("BOT_TOKEN", "8713892015:AAFez0mngDbYsAxsl-aE0fQOJqnnvHh5_K8")
 ADMIN_ID = 7100342395
 BOT_USERNAME = "Fastpay8_bot"
-SUPPORT_USERNAME = "Jou904"  # 👈 এখানে '@' ছাড়া আপনার টেলিগ্রাম ইউজারনেম দেওয়া হলো
+SUPPORT_USERNAME = "Jou904"  # লাইভ সাপোর্টের জন্য টেলিগ্রাম ইউজারনেম
 
 # MongoDB কানেকশন সেটআপ
 MONGO_URI = os.environ.get("MONGO_URI", "mongodb+srv://admin:Bashar904@cluster0.nkm8mxx.mongodb.net/?appName=Cluster0")
@@ -255,6 +255,22 @@ async def withdraw_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     ]
     await update.message.reply_text("📲 আপনি কোন মাধ্যমে টাকা নিতে চান তা নিচে থেকে সিলেক্ট করুন:", reply_markup=InlineKeyboardMarkup(keyboard))
 
+# মোট ইউজার দেখার কমান্ড (শুধুমাত্র অ্যাডমিনের জন্য)
+async def total_users_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user = update.effective_user
+    if user.id != ADMIN_ID:
+        await update.message.reply_text("❌ এই কমান্ডটি শুধু অ্যাডমিনের জন্য!")
+        return
+        
+    try:
+        total_count = users_collection.count_documents({})
+        await update.message.reply_text(
+            f"📊 বট স্ট্যাটিস্টিক্স (Bot Stats)\n\n"
+            f"👥 মোট রেজিস্টার্ড ইউজার: **{total_count}** জন"
+        )
+    except Exception as e:
+        await update.message.reply_text(f"❌ ডেটা ফেচ করতে সমস্যা হয়েছে: {str(e)}")
+
 async def handle_request(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not update.message or not update.message.text:
         return
@@ -414,6 +430,7 @@ def main():
     app_bot.add_handler(CommandHandler("start", start))
     app_bot.add_handler(CommandHandler("deposit", deposit_command))
     app_bot.add_handler(CommandHandler("withdraw", withdraw_command))
+    app_bot.add_handler(CommandHandler("totalusers", total_users_command)) # মোট ইউজার দেখার কমান্ড হ্যান্ডলার
     app_bot.add_handler(CallbackQueryHandler(button_click))
     app_bot.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_request))
     
