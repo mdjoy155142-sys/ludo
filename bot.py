@@ -17,6 +17,7 @@ logging.basicConfig(format="%(asctime)s - %(name)s - %(levelname)s - %(message)s
 TOKEN = os.environ.get("BOT_TOKEN", "8713892015:AAFez0mngDbYsAxsl-aE0fQOJqnnvHh5_K8")
 ADMIN_ID = 7100342395
 BOT_USERNAME = "Fastpay8_bot"
+SUPPORT_USERNAME = "Jou904"  # 👈 এখানে '@' ছাড়া আপনার টেলিগ্রাম ইউজারনেম দেওয়া হলো
 
 # MongoDB কানেকশন সেটআপ
 MONGO_URI = os.environ.get("MONGO_URI", "mongodb+srv://admin:Bashar904@cluster0.nkm8mxx.mongodb.net/?appName=Cluster0")
@@ -128,16 +129,18 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 pass
     
     web_app_url = "https://telegram-bot-oh28.onrender.com"
+    support_url = f"https://t.me/{SUPPORT_USERNAME}"
     
     keyboard_inline = [
-        [InlineKeyboardButton("🎮 গেম খেলুন (Mini App)", web_app={"url": web_app_url})]
+        [InlineKeyboardButton("🎮 গেম খেলুন (Mini App)", web_app={"url": web_app_url})],
+        [InlineKeyboardButton("👨‍💻 লাইভ সাপোর্ট (Live Support)", url=support_url)]
     ]
     reply_markup_inline = InlineKeyboardMarkup(keyboard_inline)
     
     keyboard = [
         ["👤 প্রোফাইল", "💰 ব্যালেন্স"],
         ["📥 জমা", "📤 উত্তোলন"],
-        ["🔗 রেফার লিংক"]
+        ["🔗 রেফার লিংক", "🆘 লাইভ সাপোর্ট"]
     ]
     
     await update.message.reply_text(
@@ -146,7 +149,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
     
     await update.message.reply_text(
-        "👇 নিচে গেম খেলে আয় করতে বাটনে ক্লিক করুন:", 
+        "👇 নিচে গেম খেলে আয় করতে অথবা সাপোর্টে কথা বলতে বাটন সিলেক্ট করুন:", 
         reply_markup=reply_markup_inline
     )
 
@@ -301,6 +304,17 @@ async def handle_request(update: Update, context: ContextTypes.DEFAULT_TYPE):
             f"👥 আপনার মোট রেফার: {refs_count} জন"
         )
         await update.message.reply_text(ref_msg)
+
+    elif "সাপোর্ট" in text or "Support" in text:
+        support_url = f"https://t.me/{SUPPORT_USERNAME}"
+        keyboard = [
+            [InlineKeyboardButton("💬 সরাসরি লাইভ চ্যাট করুন", url=support_url)]
+        ]
+        await update.message.reply_text(
+            "🆘 যেকোনো প্রয়োজনে আমাদের সাপোর্ট টিমের সাথে সরাসরি যোগাযোগ করুন:\n\n"
+            f"👨‍💻 অ্যাডমিন ইউজারনেম: @{SUPPORT_USERNAME}",
+            reply_markup=InlineKeyboardMarkup(keyboard)
+        )
 
 async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
