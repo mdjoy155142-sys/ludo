@@ -270,7 +270,7 @@ async def total_users_command(update: Update, context: ContextTypes.DEFAULT_TYPE
     except Exception as e:
         await update.message.reply_text(f"❌ সমস্যা হয়েছে: {str(e)}")
 
-# সব ইউজারের সম্পূর্ণ তালিকা দেখার কমান্ড (অ্যাডমিন) - ফাইল বা চ্যাট লিস্ট সাপোর্ট সহ
+# সকল ইউজারের ব্যালেন্স ও তথ্য চ্যাটে দেখানোর কমান্ড (অ্যাডমিন)
 async def userlist_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     if user.id != ADMIN_ID:
@@ -284,41 +284,25 @@ async def userlist_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
             return
             
         total_users_count = len(all_users)
+        await update.message.reply_text(f"📋 **সকল ইউজারের ব্যালেন্স ও তথ্য (মোট: {total_users_count} জন):**")
         
-        # যদি ইউজার ৪০ জনের কম হয়, সরাসরি চ্যাটে মেসেজ পাঠাবে
-        if total_users_count <= 40:
-            text = f"📋 **সকল ইউজারের তালিকা (মোট: {total_users_count} জন):**\n\n"
-            for idx, u in enumerate(all_users, 1):
-                u_id = u.get("user_id")
-                bal = round(u.get("balance", 0.0), 2)
-                dep = round(u.get("total_deposit", 0.0), 2)
-                refs = len(u.get("referrals", []))
-                text += f"{idx}. আইডি: `{u_id}` | ব্যালেন্স: {bal}৳ | জমা: {dep}৳ | রেফার: {refs}\n"
-            await update.message.reply_text(text, parse_mode="Markdown")
+        chunk_text = ""
+        for idx, u in enumerate(all_users, 1):
+            u_id = u.get("user_id")
+            bal = round(u.get("balance", 0.0), 2)
+            dep = round(u.get("total_deposit", 0.0), 2)
+            refs = len(u.get("referrals", []))
             
-        else:
-            # ইউজার বেশি হলে ফাইল আকারে পাঠিয়ে দিবে
-            file_content = f"--- সকল ইউজারের সম্পূর্ণ তালিকা (মোট: {total_users_count} জন) ---\n\n"
-            for idx, u in enumerate(all_users, 1):
-                u_id = u.get("user_id")
-                bal = round(u.get("balance", 0.0), 2)
-                dep = round(u.get("total_deposit", 0.0), 2)
-                refs = len(u.get("referrals", []))
-                file_content += f"{idx}. আইডি: {u_id} | ব্যালেন্স: {bal}৳ | জমা: {dep}৳ | রেফার: {refs}\n"
+            line = f"{idx}. আইডি: `{u_id}`\n   💰 ব্যালেন্স: {bal}৳ | জমা: {dep}৳ | রেফার: {refs}\n\n"
             
-            file_path = "all_users_list.txt"
-            with open(file_path, "w", encoding="utf-8") as f:
-                f.write(file_content)
+            if len(chunk_text) + len(line) > 3500:
+                await update.message.reply_text(chunk_text, parse_mode="Markdown")
+                chunk_text = ""
                 
-            with open(file_path, "rb") as f:
-                await update.message.reply_document(
-                    document=f, 
-                    filename="all_users_list.txt", 
-                    caption=f"📁 আপনার বটের মোট {total_users_count} জন ইউজারের সম্পূর্ণ তালিকা ফাইল আকারে নিচে দেওয়া হলো:"
-                )
+            chunk_text += line
             
-            if os.path.exists(file_path):
-                os.remove(file_path)
+        if chunk_text:
+            await update.message.reply_text(chunk_text, parse_mode="Markdown")
                 
     except Exception as e:
         await update.message.reply_text(f"❌ ইউজার লিস্ট আনতে সমস্যা হয়েছে: {str(e)}")
@@ -526,7 +510,7 @@ def main():
     app_bot.add_handler(CallbackQueryHandler(button_click))
     app_bot.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_request))
     
-    print("বট এবং ফ্লাস্ক সার্ভার সমস্ত আপডেট সহ সফলভাবে চালু হয়েছে...")
+    print("বট এবং ফ্লাস্ক সার্ভার ইউজার ব্যালেন্স লিস্ট আপডেট সহ সফলভাবে চালু হয়েছে...")
     app_bot.run_polling()
 
 if __name__ == "__main__":
