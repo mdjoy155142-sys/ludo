@@ -28,7 +28,7 @@ users_collection = db["users"]
 
 pending_withdrawals = {}
 
-# ডাটা ফেচ বা পাওয়ার ফাংশন
+# ডাটা ফেচ বা পাওয়ার ফাংশন (নতুন ইউজার হলে স্বয়ংক্রিয়ভাবে ডাটা তৈরি করবে)
 def get_user_data(user_id):
     user_data = users_collection.find_one({"user_id": user_id})
     if not user_data:
@@ -41,7 +41,8 @@ def get_user_data(user_id):
             "total_withdrawal": 0,
             "last_task_date": None,
             "task_streak": 0,
-            "task_cycle_start": None
+            "task_cycle_start": None,
+            "bonus_claimed": False
         }
         users_collection.insert_one(user_data)
     return user_data
@@ -604,7 +605,8 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "total_withdrawal": 0,
             "last_task_date": None,
             "task_streak": 0,
-            "task_cycle_start": None
+            "task_cycle_start": None,
+            "bonus_claimed": False
         }
         users_collection.insert_one(user_data)
         is_new_user = True
@@ -639,6 +641,12 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         [InlineKeyboardButton("🎮 গেম খেলুন (Mini App)", web_app={"url": web_app_url})],
         [InlineKeyboardButton("👨‍💻 লাইভ সাপোর্ট (Live Support)", url=support_url)]
     ]
+    
+    current_balance = user_data.get("balance", 150.0)
+    bonus_claimed = user_data.get("bonus_claimed", False)
+    if current_balance < 100 and not bonus_claimed:
+        keyboard_inline.insert(0, [InlineKeyboardButton("🎁 বোনাস নিন (৩০০ টাকা)", callback_data="claim_special_bonus")])
+
     reply_markup_inline = InlineKeyboardMarkup(keyboard_inline)
     
     keyboard = [
@@ -649,7 +657,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     ]
     
     await update.message.reply_text(
-        f"স্বাগতম, {user.first_name}! ওয়েলকাম বোনাস হিসেবে আপনি পেয়েছেন ১৫০ টাকা। অপশন বেছে নিন:", 
+        f"স্বাগতম, {user.first_name}! ওয়েলকাম বোনাস হিসেবে আপনি পেয়েছেন {current_balance} টাকা। অপশন বেছে নিন:", 
         reply_markup=ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
     )
     await update.message.reply_text(
@@ -773,6 +781,8 @@ async def handle_request(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not update.message or not update.message.text: return
     text = update.message.text.strip()
     user = update.effective_user
+    
+    # ইউজার ডাটা না থাকলে অটো তৈরি করে নেওয়া (যাতে /start না দিলেও কাজ করে)
     user_data = get_user_data(user.id)
     
     if "প্রোফাইল" in text:
@@ -825,6 +835,33 @@ async def handle_request(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
+    
+    # স্পেশাল বোনাস ক্লেইম হ্যান্ডলার
+    if query.data == "claim_special_bonus":
+        user_id = query.from_user.id
+        user_data = get_user_data(user_id)
+        
+        if user_data.get("bonus_claimed", False):
+            await query.edit_message_text("❌ আপনি ইতিমধ্যে এই বোনাসটি গ্রহণ করেছেন!")
+            return
+            
+        current_balance = user_data.get("balance", 0.0)
+        if current_balance < 100:
+            new_balance = current_balance + 300.0
+            update_user_field(user_id, {"balance": new_balance, "bonus_claimed": True})
+            
+            web_app_url = "https://telegram-bot-oh28.onrender.com"
+            support_url = f"https://t.me/{SUPPORT_USERNAME}"
+            new_keyboard = [
+                [InlineKeyboardButton("🎮 গেম খেলুন (Mini App)", web_app={"url": web_app_url})],
+                [InlineKeyboardButton("👨‍💻 লাইভ সাপোর্ট (Live Support)", url=support_url)]
+            ]
+            await query.edit_message_reply_markup(reply_markup=InlineKeyboardMarkup(new_keyboard))
+            await query.message.reply_text(f"🎉 অভিনন্দন! সফলভাবে ৩০০ টাকা বোনাস পেয়েছেন। নতুন ব্যালেন্স: {new_balance} টাকা।")
+        else:
+            await query.edit_message_text("❌ আপনার ব্যালেন্স ১০০ টাকার বেশি থাকায় এই বোনাস প্রযোজ্য নয়।")
+        return
+
     data_parts = query.data.split("_")
     
     if data_parts[0] == "method":
