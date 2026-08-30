@@ -2,6 +2,7 @@ import logging
 import json
 import os
 import threading
+from datetime import datetime, timedelta
 from flask import Flask, render_template, jsonify, request
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, Update
 from telegram.ext import (
@@ -35,9 +36,12 @@ def get_user_data(user_id):
             "user_id": user_id,
             "balance": 150.0,
             "referrals": [],
-            "referred_by": None,  # এফিলিয়েটের জন্য কে কার মাধ্যমে এসেছে তা ট্র্যাক করতে
+            "referred_by": None,
             "total_deposit": 0.0,
-            "total_withdrawal": 0
+            "total_withdrawal": 0,
+            "last_task_date": None,
+            "task_streak": 0,  # ৭ দিনের কাউন্ট ট্র্যাক করতে
+            "task_cycle_start": None
         }
         users_collection.insert_one(user_data)
     return user_data
@@ -97,7 +101,10 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "referrals": [],
             "referred_by": None,
             "total_deposit": 0.0,
-            "total_withdrawal": 0
+            "total_withdrawal": 0,
+            "last_task_date": None,
+            "task_streak": 0,
+            "task_cycle_start": None
         }
         users_collection.insert_one(user_data)
         is_new_user = True
@@ -114,7 +121,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
                         referrals_list.append(user_id)
                         new_ref_balance = ref_user.get("balance", 0.0) + 100.0
                         
-                        # রেফারার সেভ করা এবং যার মাধ্যমে এসেছে তাকে রেকর্ড করা
                         update_user_field(referrer_id, {
                             "referrals": referrals_list,
                             "balance": new_ref_balance
@@ -140,7 +146,8 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = [
         ["👤 প্রোফাইল", "💰 ব্যালেন্স"],
         ["📥 জমা", "📤 উত্তোলন"],
-        ["🔗 রেফার লিংক", "🆘 লাইভ সাপোর্ট"]
+        ["🔗 রেফার লিংক", "🎁 ডেইলি টাস্ক"],
+        ["🆘 লাইভ সাপোর্ট"]
     ]
     
     await update.message.reply_text(
@@ -181,7 +188,7 @@ async def deposit_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         await context.bot.send_message(
             ADMIN_ID, 
-            f"📥 নতুন জমা রিকোয়েস্ট!\n👤 ইউজার: {user.first_name}\n💰 পরিমাণ: {amount}\n🆔 TrxID: {trx}", 
+            f"📥 নতুন জমা রিকোয়েস্ট!\n👤 ইউজার: {user.first_name}\n💰 পরিমাণ: কত {amount}\n🆔 TrxID: {trx}", 
             reply_markup=InlineKeyboardMarkup(keyboard)
         )
         await update.message.reply_text("✅ আপনার জমা রিকোয়েস্ট অ্যাডমিনের কাছে পাঠানো হয়েছে।")
@@ -211,14 +218,12 @@ async def withdraw_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_data = get_user_data(user.id)
     current_balance = user_data.get("balance", 0.0)
     
-    # শর্ত ১: পর্যাপ্ত ব্যালেন্স চেক
     if current_balance < amount:
         ref_link = f"https://t.me/{BOT_USERNAME}?start=ref_{user.id}"
         error_msg = f"❌ আপনার পর্যাপ্ত পরিমাণে টাকা নাই!\n🔗 বেশি বেশি রেফার করে আয় করুন:\n{ref_link}"
         await update.message.reply_text(error_msg)
         return
 
-    # শর্ত ২: ন্যূনতম ২ টি রেফার চেক
     referrals_list = user_data.get("referrals", [])
     if len(referrals_list) < 2:
         ref_link = f"https://t.me/{BOT_USERNAME}?start=ref_{user.id}"
@@ -230,7 +235,6 @@ async def withdraw_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(ref_error_msg)
         return
 
-    # শর্ত ৩: ন্যূনতম ৫০০ টাকা ডিপোজিট চেক
     total_dep = user_data.get("total_deposit", 0.0)
     if total_dep < 500:
         deposit_msg = (
@@ -244,7 +248,6 @@ async def withdraw_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(deposit_msg)
         return
 
-    # সব শর্ত পূরণ হলে উইথড্র মাধ্যম সিলেক্ট করার অপশন দেওয়া
     pending_withdrawals[user.id] = {"phone": phone, "amount": amount}
     
     keyboard = [
@@ -255,21 +258,35 @@ async def withdraw_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     ]
     await update.message.reply_text("📲 আপনি কোন মাধ্যমে টাকা নিতে চান তা নিচে থেকে সিলেক্ট করুন:", reply_markup=InlineKeyboardMarkup(keyboard))
 
-# মোট ইউজার দেখার কমান্ড (শুধুমাত্র অ্যাডমিনের জন্য)
+# মোট ইউজার দেখার কমান্ড (অ্যাডমিন)
 async def total_users_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     if user.id != ADMIN_ID:
         await update.message.reply_text("❌ এই কমান্ডটি শুধু অ্যাডমিনের জন্য!")
         return
-        
     try:
         total_count = users_collection.count_documents({})
-        await update.message.reply_text(
-            f"📊 বট স্ট্যাটিস্টিক্স (Bot Stats)\n\n"
-            f"👥 মোট রেজিস্টার্ড ইউজার: **{total_count}** জন"
-        )
+        await update.message.reply_text(f"📊 বট স্ট্যাটিস্টিক্স\n👥 মোট রেজিস্টার্ড ইউজার: **{total_count}** জন")
     except Exception as e:
-        await update.message.reply_text(f"❌ ডেটা ফেচ করতে সমস্যা হয়েছে: {str(e)}")
+        await update.message.reply_text(f"❌ সমস্যা হয়েছে: {str(e)}")
+
+# ইউজার লিস্ট দেখার কমান্ড (অ্যাডমিন)
+async def userlist_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user = update.effective_user
+    if user.id != ADMIN_ID:
+        await update.message.reply_text("❌ এই কমান্ডটি শুধু অ্যাডমিনের জন্য!")
+        return
+    try:
+        all_users = list(users_collection.find().limit(50))
+        if not all_users:
+            await update.message.reply_text("❌ কোনো ইউজার পাওয়া যায়নি।")
+            return
+        text = "📋 **ইউজার তালিকা (সর্বশেষ ৫০ জন):**\n\n"
+        for idx, u in enumerate(all_users, 1):
+            text += f"{idx}. আইডি: `{u.get('user_id')}` | ব্যালেন্স: {u.get('balance', 0)}৳ | রেফার: {len(u.get('referrals', []))}\n"
+        await update.message.reply_text(text, parse_mode="Markdown")
+    except Exception as e:
+        await update.message.reply_text(f"❌ সমস্যা হয়েছে: {str(e)}")
 
 async def handle_request(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not update.message or not update.message.text:
@@ -297,9 +314,8 @@ async def handle_request(update: Update, context: ContextTypes.DEFAULT_TYPE):
         deposit_msg = (
             "📥 টাকা জমা করার নিয়ম:\n\n"
             "আমাদের বিকাশ (Merchant) পেমেন্ট নম্বর: `01919130118`\n"
-            "(একাউন্টটি মার্চেন্ট)\n\n"
-            "এই নাম্বারে টাকা পাঠিয়ে নিচে দেওয়া নিয়মে সেন্ড করুন:\n"
-            "/deposit <পরিমাণ> <ট্রানজেকশন_আইডি>\n\n"
+            "টাকা পাঠিয়ে নিচে নিয়মে সেন্ড করুন:\n"
+            "/deposit <পরিমাণ> <ট্রানজেকশন_আইডি>\n"
             "উদাহরণ: /deposit 200 ABC123XYZ"
         )
         await update.message.reply_text(deposit_msg)
@@ -316,19 +332,70 @@ async def handle_request(update: Update, context: ContextTypes.DEFAULT_TYPE):
         refs_count = len(user_data.get("referrals", []))
         ref_msg = (
             f"🔗 আপনার রেফারেল লিংক:\n{ref_link}\n\n"
-            f"🎁 প্রতি সফল রেফারে পাবেন ১০০ টাকা বোনাস এবং আপনার রেফার করা কেউ ডিপোজিট করলে পাবেন **১০% এফিলিয়েট কমিশন**!\n"
+            f"🎁 প্রতি সফল রেফারে পাবেন ১০০ টাকা বোনাস এবং ১০% এফিলিয়েট কমিশন!\n"
             f"👥 আপনার মোট রেফার: {refs_count} জন"
         )
         await update.message.reply_text(ref_msg)
 
+    elif "ডেইলি টাস্ক" in text:
+        # ৭ দিনের টাস্ক লজিক (মোট ১৫০ টাকা বোনাস ডিস্ট্রিবিউশন: দিন ১-৬ এ ২০ টাকা করে, দিন ৭ এ ৩০ টাকা)
+        now = datetime.utcnow()
+        last_date = user_data.get("last_task_date")
+        streak = user_data.get("task_streak", 0)
+        cycle_start = user_data.get("task_cycle_start")
+        
+        # ৭ দিন পূর্ণ হলে বা সাইকেল শুরু না হলে রিসেট চেক
+        if cycle_start:
+            if isinstance(cycle_start, str):
+                cycle_start = datetime.fromisoformat(cycle_start)
+            if now - cycle_start > timedelta(days=7):
+                streak = 0
+                cycle_start = now
+        else:
+            cycle_start = now
+
+        if last_date:
+            if isinstance(last_date, str):
+                last_date = datetime.fromisoformat(last_date)
+            
+            # ২৪ ঘণ্টার মধ্যে আবার টাস্ক নিতে পারবে না
+            if now - last_date < timedelta(hours=24):
+                time_left = timedelta(hours=24) - (now - last_date)
+                hours, remainder = divmod(int(time_left.total_seconds()), 3600)
+                minutes, _ = divmod(remainder, 60)
+                await update.message.reply_text(f"⏳ আপনি আজকের টাস্ক ইতিমধ্যেই সম্পন্ন করেছেন!\nপরবর্তী টাস্কের জন্য অপেক্ষা করুন: প্রায় {hours} ঘণ্টা {minutes} মিনিট বাকি আছে।")
+                return
+
+        # যদি টানা মিস করে ফেললে বা ৭ দিন পার হয়ে নতুন সাইকেল হয়
+        if streak >= 7:
+            streak = 0
+            cycle_start = now
+
+        streak += 1
+        
+        # ৭ দিনে মোট ১৫০ টাকার স্কেল (যেমন: ১-৬ দিন ২০ টাকা করে = ১২০, ৭ম দিন ৩০ টাকা = মোট ১৫০)
+        reward = 30.0 if streak == 7 else 20.0
+        new_balance = user_data.get("balance", 150.0) + reward
+        
+        update_user_field(user.id, {
+            "balance": new_balance,
+            "task_streak": streak,
+            "last_task_date": now.isoformat(),
+            "task_cycle_start": cycle_start.isoformat() if isinstance(cycle_start, datetime) else cycle_start
+        })
+        
+        await update.message.reply_text(
+            f"🎁 অভিনন্দন! আপনার আজকের ({streak}ম দিন) ডেইলি টাস্ক সম্পন্ন হয়েছে!\n"
+            f"💰 আপনি বোনাস পেয়েছেন: **{reward} টাকা**\n"
+            f"📈 ৭ দিনের সাইকেলে আপনার বর্তমান অগ্রগতি: {streak}/7 দিন\n"
+            f"💎 বর্তমান মোট ব্যালেন্স: {new_balance} টাকা"
+        )
+
     elif "সাপোর্ট" in text or "Support" in text:
         support_url = f"https://t.me/{SUPPORT_USERNAME}"
-        keyboard = [
-            [InlineKeyboardButton("💬 সরাসরি লাইভ চ্যাট করুন", url=support_url)]
-        ]
+        keyboard = [[InlineKeyboardButton("💬 সরাসরি লাইভ চ্যাট করুন", url=support_url)]]
         await update.message.reply_text(
-            "🆘 যেকোনো প্রয়োজনে আমাদের সাপোর্ট টিমের সাথে সরাসরি যোগাযোগ করুন:\n\n"
-            f"👨‍💻 অ্যাডমিন ইউজারনেম: @{SUPPORT_USERNAME}",
+            f"🆘 যেকোনো প্রয়োজনে আমাদের সাপোর্ট টিমের সাথে যোগাযোগ করুন:\n👨‍💻 @{SUPPORT_USERNAME}",
             reply_markup=InlineKeyboardMarkup(keyboard)
         )
 
@@ -342,7 +409,7 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
         target_id = int(data_parts[2])
         
         if target_id not in pending_withdrawals:
-            await query.edit_message_text("❌ সময়সীমা শেষ অথবা রিকোয়েস্ট পাওয়া যায়নি। আবার চেষ্টা করুন।")
+            await query.edit_message_text("❌ সময়সীমা শেষ অথবা রিকোয়েস্ট পাওয়া যায়নি।")
             return
             
         wit_data = pending_withdrawals.pop(target_id)
@@ -366,7 +433,7 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
             f"📤 নতুন উত্তোলন রিকোয়েস্ট!\n👤 ইউজার: {user_name}\n💳 মাধ্যম: {method}\n📞 নম্বর: {phone}\n💰 পরিমাণ: {amount}", 
             reply_markup=InlineKeyboardMarkup(keyboard)
         )
-        await query.edit_message_text(f"✅ আপনার উত্তোলনের মাধ্যম ({method}) সিলেক্ট হয়েছে এবং রিকোয়েস্ট অ্যাডমিনের কাছে পাঠানো হয়েছে।")
+        await query.edit_message_text(f"✅ উত্তোলনের মাধ্যম ({method}) সিলেক্ট হয়েছে এবং অ্যাডমিনের কাছে পাঠানো হয়েছে।")
         return
 
     action_type = data_parts[0]
@@ -382,31 +449,25 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
             new_dep = user_data.get("total_deposit", 0.0) + amount
             update_user_field(target_id, {"balance": new_bal, "total_deposit": new_dep})
             
-            # --- এফিলিয়েট কমিশন (১০%) লজিক ---
             referrer_id = user_data.get("referred_by")
             if referrer_id:
-                commission = amount * 0.10  # জমার ওপর ১০% কমিশন
+                commission = amount * 0.10
                 ref_user_data = get_user_data(referrer_id)
                 ref_new_bal = ref_user_data.get("balance", 0.0) + commission
-                
-                # রেফারারের ব্যালেন্স আপডেট করা
                 update_user_field(referrer_id, {"balance": ref_new_bal})
-                
-                # রেফারারকে নোটিফিকেশন পাঠানো
                 try:
                     await context.bot.send_message(
                         referrer_id, 
-                        f"🤝 অভিনন্দন! আপনার এফিলিয়েট ইউজার ডিপোজিট করার কারণে আপনি ১০% কমিশন অর্থাৎ **{commission} টাকা** বোনাস পেয়েছেন!"
+                        f"🤝 অভিনন্দন! আপনার এফিলিয়েট ইউজার ডিপোজিট করার কারণে আপনি ১০% কমিশন অর্থাৎ **{commission} টাকা** পেয়েছেন!"
                     )
                 except Exception:
                     pass
-            # -----------------------------------
             
-            await query.edit_message_text(f"✅ জমা এপ্রুভ করা হয়েছে। (ইউজার: {target_id}, মোট জমা: {new_dep} টাকা)")
-            await context.bot.send_message(target_id, f"🎉 অভিনন্দন! আপনার {amount} টাকা জমা এপ্রুভ হয়েছে। (আপনার মোট জমা: {new_dep} টাকা)")
+            await query.edit_message_text(f"✅ জমা এপ্রুভ করা হয়েছে। (ইউজার: {target_id})")
+            await context.bot.send_message(target_id, f"🎉 অভিনন্দন! আপনার {amount} টাকা জমা এপ্রুভ হয়েছে।")
         else:
             await query.edit_message_text("❌ জমা রিজেক্ট করা হয়েছে।")
-            await context.bot.send_message(target_id, f"❌ দুঃখিত, আপনার {amount} টাকা জমার রিকোয়েস্টটি বাতিল করা হয়েছে।")
+            await context.bot.send_message(target_id, f"❌ দুঃখিত, আপনার {amount} টাকা জমার রিকোয়েস্ট বাতিল করা হয়েছে।")
             
     elif action_type == "wit":
         if status == "approve":
@@ -418,7 +479,7 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await context.bot.send_message(target_id, f"✅ আপনার {amount} টাকা উত্তোলন সফল হয়েছে এবং পেমেন্ট দেওয়া হয়েছে!")
         else:
             await query.edit_message_text("❌ উত্তোলন রিজেক্ট করা হয়েছে।")
-            await context.bot.send_message(target_id, f"❌ দুঃখিত, আপনার {amount} টাকা উত্তোলনের রিকোয়েস্টটি রিজেক্ট করা হয়েছে।")
+            await context.bot.send_message(target_id, f"❌ দুঃখিত, আপনার {amount} টাকা উত্তোলনের রিকোয়েস্ট রিজেক্ট করা হয়েছে।")
 
 def main():
     flask_thread = threading.Thread(target=run_flask)
@@ -430,11 +491,12 @@ def main():
     app_bot.add_handler(CommandHandler("start", start))
     app_bot.add_handler(CommandHandler("deposit", deposit_command))
     app_bot.add_handler(CommandHandler("withdraw", withdraw_command))
-    app_bot.add_handler(CommandHandler("totalusers", total_users_command)) # মোট ইউজার দেখার কমান্ড হ্যান্ডলার
+    app_bot.add_handler(CommandHandler("totalusers", total_users_command))
+    app_bot.add_handler(CommandHandler("userlist", userlist_command))
     app_bot.add_handler(CallbackQueryHandler(button_click))
     app_bot.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_request))
     
-    print("বট এবং ফ্লাস্ক সার্ভার সফলভাবে MongoDB ডাটাবেস সহ চালু হয়েছে...")
+    print("বট এবং ফ্লাস্ক সার্ভার ডেইলি টাস্ক সহ সফলভাবে চালু হয়েছে...")
     app_bot.run_polling()
 
 if __name__ == "__main__":
