@@ -40,7 +40,7 @@ def get_user_data(user_id):
             "total_deposit": 0.0,
             "total_withdrawal": 0,
             "last_task_date": None,
-            "task_streak": 0,  # ৭ দিনের কাউন্ট ট্র্যাক করতে
+            "task_streak": 0,
             "task_cycle_start": None
         }
         users_collection.insert_one(user_data)
@@ -188,7 +188,7 @@ async def deposit_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         await context.bot.send_message(
             ADMIN_ID, 
-            f"📥 নতুন জমা রিকোয়েস্ট!\n👤 ইউজার: {user.first_name}\n💰 পরিমাণ: কত {amount}\n🆔 TrxID: {trx}", 
+            f"📥 নতুন জমা রিকোয়েস্ট!\n👤 ইউজার: {user.first_name}\n💰 পরিমাণ: {amount}\n🆔 TrxID: {trx}", 
             reply_markup=InlineKeyboardMarkup(keyboard)
         )
         await update.message.reply_text("✅ আপনার জমা রিকোয়েস্ট অ্যাডমিনের কাছে পাঠানো হয়েছে।")
@@ -270,23 +270,58 @@ async def total_users_command(update: Update, context: ContextTypes.DEFAULT_TYPE
     except Exception as e:
         await update.message.reply_text(f"❌ সমস্যা হয়েছে: {str(e)}")
 
-# ইউজার লিস্ট দেখার কমান্ড (অ্যাডমিন)
+# সব ইউজারের সম্পূর্ণ তালিকা দেখার কমান্ড (অ্যাডমিন) - ফাইল বা চ্যাট লিস্ট সাপোর্ট সহ
 async def userlist_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     if user.id != ADMIN_ID:
         await update.message.reply_text("❌ এই কমান্ডটি শুধু অ্যাডমিনের জন্য!")
         return
+        
     try:
-        all_users = list(users_collection.find().limit(50))
+        all_users = list(users_collection.find())
         if not all_users:
             await update.message.reply_text("❌ কোনো ইউজার পাওয়া যায়নি।")
             return
-        text = "📋 **ইউজার তালিকা (সর্বশেষ ৫০ জন):**\n\n"
-        for idx, u in enumerate(all_users, 1):
-            text += f"{idx}. আইডি: `{u.get('user_id')}` | ব্যালেন্স: {u.get('balance', 0)}৳ | রেফার: {len(u.get('referrals', []))}\n"
-        await update.message.reply_text(text, parse_mode="Markdown")
+            
+        total_users_count = len(all_users)
+        
+        # যদি ইউজার ৪০ জনের কম হয়, সরাসরি চ্যাটে মেসেজ পাঠাবে
+        if total_users_count <= 40:
+            text = f"📋 **সকল ইউজারের তালিকা (মোট: {total_users_count} জন):**\n\n"
+            for idx, u in enumerate(all_users, 1):
+                u_id = u.get("user_id")
+                bal = round(u.get("balance", 0.0), 2)
+                dep = round(u.get("total_deposit", 0.0), 2)
+                refs = len(u.get("referrals", []))
+                text += f"{idx}. আইডি: `{u_id}` | ব্যালেন্স: {bal}৳ | জমা: {dep}৳ | রেফার: {refs}\n"
+            await update.message.reply_text(text, parse_mode="Markdown")
+            
+        else:
+            # ইউজার বেশি হলে ফাইল আকারে পাঠিয়ে দিবে
+            file_content = f"--- সকল ইউজারের সম্পূর্ণ তালিকা (মোট: {total_users_count} জন) ---\n\n"
+            for idx, u in enumerate(all_users, 1):
+                u_id = u.get("user_id")
+                bal = round(u.get("balance", 0.0), 2)
+                dep = round(u.get("total_deposit", 0.0), 2)
+                refs = len(u.get("referrals", []))
+                file_content += f"{idx}. আইডি: {u_id} | ব্যালেন্স: {bal}৳ | জমা: {dep}৳ | রেফার: {refs}\n"
+            
+            file_path = "all_users_list.txt"
+            with open(file_path, "w", encoding="utf-8") as f:
+                f.write(file_content)
+                
+            with open(file_path, "rb") as f:
+                await update.message.reply_document(
+                    document=f, 
+                    filename="all_users_list.txt", 
+                    caption=f"📁 আপনার বটের মোট {total_users_count} জন ইউজারের সম্পূর্ণ তালিকা ফাইল আকারে নিচে দেওয়া হলো:"
+                )
+            
+            if os.path.exists(file_path):
+                os.remove(file_path)
+                
     except Exception as e:
-        await update.message.reply_text(f"❌ সমস্যা হয়েছে: {str(e)}")
+        await update.message.reply_text(f"❌ ইউজার লিস্ট আনতে সমস্যা হয়েছে: {str(e)}")
 
 async def handle_request(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not update.message or not update.message.text:
@@ -301,20 +336,20 @@ async def handle_request(update: Update, context: ContextTypes.DEFAULT_TYPE):
         profile_text = (
             f"👤 প্রোফাইল\n"
             f"🆔 আইডি: {user.id}\n"
-            f"💰 ব্যালেন্স: {user_data.get('balance', 150.0)} টাকা\n"
+            f"💰 ব্যালেন্স: {round(user_data.get('balance', 150.0), 2)} টাকা\n"
             f"📥 মোট জমা: {total_dep} টাকা\n"
             f"👥 মোট রেফার: {refs_count} জন"
         )
         await update.message.reply_text(profile_text)
         
     elif "ব্যালেন্স" in text:
-        await update.message.reply_text(f"💰 বর্তমান ব্যালেন্স: {user_data.get('balance', 150.0)} টাকা")
+        await update.message.reply_text(f"💰 বর্তমান ব্যালেন্স: {round(user_data.get('balance', 150.0), 2)} টাকা")
         
     elif "জমা" in text:
         deposit_msg = (
             "📥 টাকা জমা করার নিয়ম:\n\n"
             "আমাদের বিকাশ (Merchant) পেমেন্ট নম্বর: `01919130118`\n"
-            "টাকা পাঠিয়ে নিচে নিয়মে সেন্ড করুন:\n"
+            "টাকা পাঠিয়ে নিচের নিয়মে সেন্ড করুন:\n"
             "/deposit <পরিমাণ> <ট্রানজেকশন_আইডি>\n"
             "উদাহরণ: /deposit 200 ABC123XYZ"
         )
@@ -338,13 +373,11 @@ async def handle_request(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(ref_msg)
 
     elif "ডেইলি টাস্ক" in text:
-        # ৭ দিনের টাস্ক লজিক (মোট ১৫০ টাকা বোনাস ডিস্ট্রিবিউশন: দিন ১-৬ এ ২০ টাকা করে, দিন ৭ এ ৩০ টাকা)
         now = datetime.utcnow()
         last_date = user_data.get("last_task_date")
         streak = user_data.get("task_streak", 0)
         cycle_start = user_data.get("task_cycle_start")
         
-        # ৭ দিন পূর্ণ হলে বা সাইকেল শুরু না হলে রিসেট চেক
         if cycle_start:
             if isinstance(cycle_start, str):
                 cycle_start = datetime.fromisoformat(cycle_start)
@@ -358,7 +391,6 @@ async def handle_request(update: Update, context: ContextTypes.DEFAULT_TYPE):
             if isinstance(last_date, str):
                 last_date = datetime.fromisoformat(last_date)
             
-            # ২৪ ঘণ্টার মধ্যে আবার টাস্ক নিতে পারবে না
             if now - last_date < timedelta(hours=24):
                 time_left = timedelta(hours=24) - (now - last_date)
                 hours, remainder = divmod(int(time_left.total_seconds()), 3600)
@@ -366,14 +398,12 @@ async def handle_request(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 await update.message.reply_text(f"⏳ আপনি আজকের টাস্ক ইতিমধ্যেই সম্পন্ন করেছেন!\nপরবর্তী টাস্কের জন্য অপেক্ষা করুন: প্রায় {hours} ঘণ্টা {minutes} মিনিট বাকি আছে।")
                 return
 
-        # যদি টানা মিস করে ফেললে বা ৭ দিন পার হয়ে নতুন সাইকেল হয়
         if streak >= 7:
             streak = 0
             cycle_start = now
 
         streak += 1
         
-        # ৭ দিনে মোট ১৫০ টাকার স্কেল (যেমন: ১-৬ দিন ২০ টাকা করে = ১২০, ৭ম দিন ৩০ টাকা = মোট ১৫০)
         reward = 30.0 if streak == 7 else 20.0
         new_balance = user_data.get("balance", 150.0) + reward
         
@@ -388,7 +418,7 @@ async def handle_request(update: Update, context: ContextTypes.DEFAULT_TYPE):
             f"🎁 অভিনন্দন! আপনার আজকের ({streak}ম দিন) ডেইলি টাস্ক সম্পন্ন হয়েছে!\n"
             f"💰 আপনি বোনাস পেয়েছেন: **{reward} টাকা**\n"
             f"📈 ৭ দিনের সাইকেলে আপনার বর্তমান অগ্রগতি: {streak}/7 দিন\n"
-            f"💎 বর্তমান মোট ব্যালেন্স: {new_balance} টাকা"
+            f"💎 বর্তমান মোট ব্যালেন্স: {round(new_balance, 2)} টাকা"
         )
 
     elif "সাপোর্ট" in text or "Support" in text:
@@ -496,7 +526,7 @@ def main():
     app_bot.add_handler(CallbackQueryHandler(button_click))
     app_bot.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_request))
     
-    print("বট এবং ফ্লাস্ক সার্ভার ডেইলি টাস্ক সহ সফলভাবে চালু হয়েছে...")
+    print("বট এবং ফ্লাস্ক সার্ভার সমস্ত আপডেট সহ সফলভাবে চালু হয়েছে...")
     app_bot.run_polling()
 
 if __name__ == "__main__":
