@@ -548,7 +548,7 @@ def index():
 @app.route('/get_balance/<int:user_id>')
 def get_balance(user_id):
     user_data = get_user_data(user_id)
-    return jsonify({"status": "success", "balance": user_data.get("balance", 150.0)})
+    return jsonify({"status": "success", "balance": round(user_data.get("balance", 150.0), 2)})
 
 @app.route('/update_balance', methods=['POST'])
 def update_balance():
@@ -559,7 +559,7 @@ def update_balance():
         
         user_data = get_user_data(user_id)
         current_balance = user_data.get("balance", 150.0)
-        new_balance = current_balance + amount_diff
+        new_balance = round(current_balance + amount_diff, 2)
         
         if new_balance < 0:
             new_balance = 0.0
@@ -608,7 +608,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     referrals_list = ref_user.get("referrals", [])
                     if user_id not in referrals_list:
                         referrals_list.append(user_id)
-                        new_ref_balance = ref_user.get("balance", 0.0) + 100.0
+                        new_ref_balance = round(ref_user.get("balance", 0.0) + 100.0, 2)
                         update_user_field(referrer_id, {
                             "referrals": referrals_list,
                             "balance": new_ref_balance
@@ -629,7 +629,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         [InlineKeyboardButton("👨‍💻 লাইভ সাপোর্ট (Live Support)", url=support_url)]
     ]
     
-    current_balance = user_data.get("balance", 150.0)
+    current_balance = round(user_data.get("balance", 150.0), 2)
     bonus_claimed = user_data.get("bonus_claimed", False)
     if current_balance < 100 and not bonus_claimed:
         keyboard_inline.insert(0, [InlineKeyboardButton("🎁 বোনাস নিন (৩০০ টাকা)", callback_data="claim_special_bonus")])
@@ -764,7 +764,6 @@ async def userlist_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except Exception as e:
         await update.message.reply_text(f"❌ সমস্যা: {str(e)}")
 
-# --- নতুন ব্রডকাস্ট কমান্ড (সবার কাছে নোটিফিকেশন পাঠানোর জন্য) ---
 async def broadcast_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     if user.id != ADMIN_ID:
@@ -811,13 +810,20 @@ async def handle_request(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     if "প্রোফাইল" in text:
         refs_count = len(user_data.get("referrals", []))
-        total_dep = user_data.get("total_deposit", 0.0)
-        profile_text = f"👤 প্রোফাইল\n🆔 আইডি: {user.id}\n💰 ব্যালেন্স: {round(user_data.get('balance', 150.0), 2)} টাকা\n📥 মোট জমা: {total_dep} টাকা\n👥 মোট রেফার: {refs_count} জন"
+        total_dep = round(user_data.get("total_deposit", 0.0), 2)
+        bal = round(user_data.get("balance", 150.0), 2)
+        profile_text = f"👤 প্রোফাইল\n🆔 আইডি: {user.id}\n💰 ব্যালেন্স: {bal} টাকা\n📥 মোট জমা: {total_dep} টাকা\n👥 মোট রেফার: {refs_count} জন"
         await update.message.reply_text(profile_text)
     elif "ব্যালেন্স" in text:
-        await update.message.reply_text(f"💰 বর্তমান ব্যালেন্স: {round(user_data.get('balance', 150.0), 2)} টাকা")
+        bal = round(user_data.get("balance", 150.0), 2)
+        await update.message.reply_text(f"💰 বর্তমান ব্যালেন্স: {bal} টাকা")
     elif "জমা" in text:
-        await update.message.reply_text("📥 টাকা জমা করুন:\nবিকাশ নম্বর: `01919130118`\nনিয়ম: /deposit <পরিমাণ> <TrxID>")
+        await update.message.reply_text(
+            "📥 টাকা জমা করুন:\n\n"
+            "বিকাশ মার্চেন্ট নম্বর: `01919130118`\n"
+            "*(টাকা পাঠানোর সময় পেমেন্ট অপশন ব্যবহার করুন)*\n\n"
+            "নিয়ম: /deposit <পরিমাণ> <TrxID>"
+        )
     elif "উত্তোলন" in text:
         await update.message.reply_text("উত্তোলন নিয়ম: /withdraw <নম্বর> <পরিমাণ>")
     elif "রেফার" in text or "লিংক" in text:
@@ -846,7 +852,7 @@ async def handle_request(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if streak >= 7: streak, cycle_start = 0, now
         streak += 1
         reward = 30.0 if streak == 7 else 20.0
-        new_balance = user_data.get("balance", 150.0) + reward
+        new_balance = round(user_data.get("balance", 150.0) + reward, 2)
         
         update_user_field(user.id, {
             "balance": new_balance, "task_streak": streak,
@@ -870,7 +876,7 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
             
         current_balance = user_data.get("balance", 0.0)
         if current_balance < 100:
-            new_balance = current_balance + 300.0
+            new_balance = round(current_balance + 300.0, 2)
             update_user_field(user_id, {"balance": new_balance, "bonus_claimed": True})
             
             web_app_url = "https://telegram-bot-oh28.onrender.com"
@@ -882,7 +888,7 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await query.edit_message_reply_markup(reply_markup=InlineKeyboardMarkup(new_keyboard))
             await query.message.reply_text(f"🎉 অভিনন্দন! সফলভাবে ৩০০ টাকা বোনাস পেয়েছেন। নতুন ব্যালেন্স: {new_balance} টাকা।")
         else:
-            await query.edit_message_text("❌ আপনার ব্যালেন্স ১০০ টাকার বেশি থাকায় এই বোনাস প্রযোজ্য নয়።")
+            await query.edit_message_text("❌ আপনার ব্যালেন্স ১০০ টাকার বেশি থাকায় এই বোনাস প্রযোজ্য নয়।")
         return
 
     data_parts = query.data.split("_")
@@ -904,7 +910,9 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     if action_type == "dep":
         if status == "approve":
-            update_user_field(target_id, {"balance": user_data.get("balance", 150.0) + amount, "total_deposit": user_data.get("total_deposit", 0.0) + amount})
+            new_bal = round(user_data.get("balance", 150.0) + amount, 2)
+            new_dep = round(user_data.get("total_deposit", 0.0) + amount, 2)
+            update_user_field(target_id, {"balance": new_bal, "total_deposit": new_dep})
             await query.edit_message_text("✅ জমা এপ্রুভড।")
             await context.bot.send_message(target_id, f"🎉 আপনার {amount} টাকা জমা সফল হয়েছে!")
         else:
@@ -912,7 +920,8 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await context.bot.send_message(target_id, f"❌ আপনার {amount} টাকা জমা বাতিল হয়েছে।")
     elif action_type == "wit":
         if status == "approve":
-            update_user_field(target_id, {"balance": max(0.0, user_data.get("balance", 150.0) - amount), "total_withdrawal": user_data.get("total_withdrawal", 0) + 1})
+            new_bal = round(max(0.0, user_data.get("balance", 150.0) - amount), 2)
+            update_user_field(target_id, {"balance": new_bal, "total_withdrawal": user_data.get("total_withdrawal", 0) + 1})
             await query.edit_message_text("✅ উত্তোলন এপ্রুভড।")
             await context.bot.send_message(target_id, f"✅ আপনার {amount} টাকা পেমেন্ট দেওয়া হয়েছে!")
         else:
@@ -930,7 +939,7 @@ def main():
     app_bot.add_handler(CommandHandler("withdraw", withdraw_command))
     app_bot.add_handler(CommandHandler("totalusers", total_users_command))
     app_bot.add_handler(CommandHandler("userlist", userlist_command))
-    app_bot.add_handler(CommandHandler("broadcast", broadcast_command))  # ব্রডকাস্ট কমান্ড হ্যান্ডলার
+    app_bot.add_handler(CommandHandler("broadcast", broadcast_command))
     app_bot.add_handler(CallbackQueryHandler(button_click))
     app_bot.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_request))
     
