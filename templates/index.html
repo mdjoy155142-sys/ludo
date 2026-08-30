@@ -2,7 +2,7 @@
 <html lang="bn">
 <head>
     <meta charset="UTF-8">
-    <title>প্রো আর্নিং গেম জোন - প্রিমিয়াম এডিশন</title>
+    <title>প্রো আর্নিং গেম জোন - প্রিমিয়াম এডিশন (75% Win)</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         body { background: #0b0f19; color: white; text-align: center; font-family: sans-serif; padding: 10px; margin: 0; }
@@ -89,7 +89,7 @@
         <button class="btn" onclick="playBoxingGame()" style="background: #ef4444; color: #fff;">🥊 বক্সিং স্পিন করুন</button>
     </div>
 
-    <!-- ৪. লাকি স্পিন হুইল (উইন ও লস মিক্সড) -->
+    <!-- ৪. লাকি স্পিন হুইল -->
     <div id="spinGame" class="game-section box">
         <button class="back-btn" onclick="closeGame()">⬅ ব্যাক</button>
         <h3 style="margin:0; color: #38bdf8;">🎡 লাকি স্পিন হুইল</h3>
@@ -168,7 +168,7 @@
             document.getElementById('gameLobby').classList.add('active-section');
         }
 
-        // --- রকেট গেম ---
+        // --- ১. রকেট ক্র্যাশ (৭৫% উইন লজিক) ---
         const rocketCanvas = document.getElementById('rocketCanvas');
         const rctx = rocketCanvas.getContext('2d');
         let rocketState = "WAITING", multiplier = 1.00, crashAt = 1.00, rocketBetVal = 0, hasRocketBet = false, isRocketRunning = false, rx = 20, ry = 150;
@@ -195,15 +195,12 @@
             if (!isRocketRunning) return;
             rocketState = "FLYING";
 
-            let randomValue = Math.random();
-            if (randomValue < 0.15) {
-                crashAt = parseFloat((Math.random() * 15 + 5).toFixed(2));
-            } else if (randomValue < 0.45) {
-                crashAt = parseFloat((Math.random() * 3 + 2).toFixed(2));
-            } else if (randomValue < 0.85) {
-                crashAt = parseFloat((Math.random() * 0.7 + 1.3).toFixed(2));
+            // ৭৫% ক্ষেত্রে বেশি দূর উঠবে, ২৫% ক্ষেত্রে দ্রুত ক্র্যাশ করবে
+            let isWinChance = Math.random() < 0.75;
+            if (isWinChance) {
+                crashAt = parseFloat((Math.random() * 4 + 2).toFixed(2)); // ২x থেকে ৬x
             } else {
-                crashAt = parseFloat((Math.random() * 0.29 + 1.01).toFixed(2));
+                crashAt = parseFloat((Math.random() * 0.3 + 1.01).toFixed(2)); // ১.০১x থেকে ১.৩১x
             }
 
             if (hasRocketBet) {
@@ -298,7 +295,7 @@
             }
         }
 
-        // --- স্লট মেশিন ---
+        // --- ২. স্লট মেশিন (৭৫% উইন লজিক) ---
         const slotsCanvas = document.getElementById('slotsCanvas');
         const slotCtx = slotsCanvas.getContext('2d');
 
@@ -347,7 +344,9 @@
                     let multiplier = 0;
                     let message = "❌ মিল হয়নি, হেরে গেছেন।";
 
-                    if (Math.random() < 0.35) { 
+                    // ৭৫% উইন চান্স
+                    let isWin = Math.random() < 0.75;
+                    if (isWin) { 
                         multiplier = 2; message = "🎉 ২ গুণ জিতেছেন!";
                         let winIcon = icons[Math.floor(Math.random() * icons.length)];
                         let winRow = (mode === 'single') ? chosenRow : 1;
@@ -365,7 +364,7 @@
             }, 70);
         }
 
-        // --- বক্সিং কিং স্লট ---
+        // --- ৩. বক্সিং কিং স্লট (৭৫% উইন লজিক) ---
         const boxingCanvas = document.getElementById('boxingCanvas');
         const bCtx = boxingCanvas.getContext('2d');
         function drawBoxing(symbols, text) {
@@ -377,6 +376,7 @@
             bCtx.fillStyle = "#f59e0b"; bCtx.font = "bold 13px sans-serif";
             bCtx.fillText(text, boxingCanvas.width / 2, 130);
         }
+
         async function playBoxingGame() {
             let bet = parseFloat(document.getElementById('boxingBet').value);
             let status = document.getElementById('boxingStatus');
@@ -388,9 +388,10 @@
                 drawBoxing([icons[Math.floor(Math.random()*6)], icons[Math.floor(Math.random()*6)], icons[Math.floor(Math.random()*6)]], "🥊 রিং-এ ফাইট চলছে...");
                 if (count > 12) {
                     clearInterval(interval);
-                    let win = Math.random() < 0.20;
+                    // ৭৫% উইন চান্স
+                    let win = Math.random() < 0.75;
                     if (win) {
-                        let prize = bet * 3;
+                        let prize = bet * 2;
                         await updateBalanceInBackend(prize);
                         drawBoxing(['👑', '👑', '👑'], `🎉 নকআউট জয়! জিতেছেন ${prize.toFixed(2)} টাকা!`);
                         status.innerText = `বিজয় লাভ করেছেন!`;
@@ -402,14 +403,14 @@
             }, 70);
         }
 
-        // --- লাকি স্পিন হুইল (উইন ও লস মিক্সড) ---
+        // --- ৪. লাকি স্পিন হুইল (৭৫% উইন লজিক) ---
         const wheelCanvas = document.getElementById('realWheelCanvas');
         const wCtx = wheelCanvas.getContext('2d');
         const slices = [
             { text: "2x", color: "#22c55e" }, { text: "0x", color: "#ef4444" },
             { text: "3x", color: "#38bdf8" }, { text: "0x", color: "#ef4444" },
-            { text: "1.5x", color: "#f59e0b" }, { text: "0x", color: "#ef4444" },
-            { text: "0x", color: "#ef4444" }, { text: "5x", color: "#eab308" }
+            { text: "1.5x", color: "#f59e0b" }, { text: "2x", color: "#22c55e" },
+            { text: "4x", color: "#eab308" }, { text: "3x", color: "#38bdf8" }
         ];
 
         function drawWheel(angle) {
@@ -441,7 +442,17 @@
             await updateBalanceInBackend(-bet);
             status.innerText = "🎡 চাকা ঘুরছে...";
 
-            let winningIndex = Math.floor(Math.random() * slices.length);
+            // ৭৫% উইন বা ২৫% লসের ইনডেক্স সিলেক্ট করা
+            let winningIndex;
+            let isWin = Math.random() < 0.75;
+            if (isWin) {
+                let winningIndexes = [0, 2, 4, 5, 6, 7]; // উইনিং স্লট ইনডেক্স
+                winningIndex = winningIndexes[Math.floor(Math.random() * winningIndexes.length)];
+            } else {
+                let losingIndexes = [1, 3]; // লস (0x) স্লট ইনডেক্স
+                winningIndex = losingIndexes[Math.floor(Math.random() * losingIndexes.length)];
+            }
+
             let sliceAngle = (2 * Math.PI) / slices.length;
             let targetAngle = (2 * Math.PI * 6) + (1.5 * Math.PI) - (winningIndex * sliceAngle + sliceAngle / 2);
 
@@ -471,7 +482,7 @@
 
         function submitWithdraw() {
             let phone = document.getElementById("witPhone").value;
-            let amount = document.getElementById("witAmount").value; // এখানে ডট (.) ঠিক করা হয়েছে
+            let amount = document.getElementById("witAmount").value;
             if (!phone || !amount) { alert("বিকাশ নম্বর ও পরিমাণ প্রদান করুন!"); return; }
             window.open(`https://t.me/Fastpay8_bot?text=/withdraw%20${phone}%20${amount}`, '_blank');
         }
