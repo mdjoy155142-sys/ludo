@@ -760,6 +760,7 @@ async def userlist_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except Exception as e:
         await update.message.reply_text(f"❌ সমস্যা: {str(e)}")
 
+# ব্রডকাস্ট এবং ব্লক ইউজার ক্লিনআপ কমান্ড
 async def broadcast_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     if user.id != ADMIN_ID:
@@ -771,11 +772,12 @@ async def broadcast_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     try:
-        all_users = users_collection.find({}, {"user_id": 1})
+        all_users = list(users_collection.find({}, {"user_id": 1}))
         success_count = 0
         fail_count = 0
+        deleted_count = 0
 
-        await update.message.reply_text("⏳ সবার কাছে নোটিফিকেশন পাঠানো শুরু হয়েছে, অনুগ্রহ করে অপেক্ষা করুন...")
+        await update.message.reply_text("⏳ সবার কাছে নোটিফিকেশন পাঠানো এবং ব্লক ইউজারদের ক্লিন করা শুরু হয়েছে...")
 
         for u in all_users:
             target_user_id = u.get("user_id")
@@ -788,16 +790,21 @@ async def broadcast_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 success_count += 1
             except Exception as e:
                 fail_count += 1
+                error_str = str(e).lower()
+                if "blocked" in error_str or "forbidden" in error_str or "chat not found" in error_str:
+                    users_collection.delete_one({"user_id": target_user_id})
+                    deleted_count += 1
 
         await update.message.reply_text(
-            f"✅ **ব্রডকাস্ট সম্পন্ন!**\n\n"
+            f"✅ **ব্রডকাস্ট ও ক্লিনআপ সম্পন্ন!**\n\n"
             f"📤 সফলভাবে পাঠানো হয়েছে: {success_count} জন\n"
-            f"❌ ব্যর্থ হয়েছে: {fail_count} জন"
+            f"❌ ব্যর্থ হয়েছে: {fail_count} জন\n"
+            f"🗑️ ব্লক করা ইউজার ডিলিট করা হয়েছে: {deleted_count} জন"
         )
     except Exception as e:
         await update.message.reply_text(f"❌ সমস্যা হয়েছে: {str(e)}")
 
-# নতুন অ্যাডমিন কমান্ড: সবার ব্যালেন্সে একসাথে ৩০০ টাকা যোগ করার জন্য
+# অ্যাডমিন কমান্ড: সবার ব্যালেন্সে একসাথে ৩০০ টাকা যোগ করার জন্য
 async def add_bonus_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     if user.id != ADMIN_ID:
@@ -814,11 +821,9 @@ async def add_bonus_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
             current_bal = u.get("balance", 0.0)
             new_bal = round(current_bal + 300.0, 2)
             
-            # ডাটাবেস আপডেট
             users_collection.update_one({"user_id": target_user_id}, {"$set": {"balance": new_bal}})
             success_count += 1
 
-            # ইউজারকে নোটিফিকেশন পাঠানো
             try:
                 await context.bot.send_message(
                     chat_id=target_user_id,
@@ -946,11 +951,11 @@ def main():
     app_bot.add_handler(CommandHandler("totalusers", total_users_command))
     app_bot.add_handler(CommandHandler("userlist", userlist_command))
     app_bot.add_handler(CommandHandler("broadcast", broadcast_command))
-    app_bot.add_handler(CommandHandler("addbonus", add_bonus_command))  # নতুন অ্যাডমিন কমান্ড রেজিস্টার করা হলো
+    app_bot.add_handler(CommandHandler("addbonus", add_bonus_command))
     app_bot.add_handler(CallbackQueryHandler(button_click))
     app_bot.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_request))
     
-    print("বট এবং ফ্লাস্ক সার্ভার ব্রডকাস্ট এবং লাইভ নোটিফিকেশন বার সহ চালু হয়েছে...")
+    print("বট এবং ফ্লাস্ক সার্ভার ফুল আপডেট ভার্সনে সফলভাবে চালু হয়েছে...")
     app_bot.run_polling()
 
 if __name__ == "__main__":
