@@ -720,8 +720,8 @@ async def withdraw_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     total_dep = user_data.get("total_deposit", 0.0)
-    if total_dep < 500:
-        await update.message.reply_text("❌ উত্তোলন করতে হলে কমপক্ষে **৫০০ টাকা জমা** করতে হবে!")
+    if total_dep < 200:  # জমা ২০০ টাকা করা হয়েছে
+        await update.message.reply_text("❌ উত্তোলন করতে হলে কমপক্ষে **২০০ টাকা জমা** করতে হবে!")
         return
 
     pending_withdrawals[user.id] = {"phone": phone, "amount": amount}
