@@ -630,10 +630,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     ]
     
     current_balance = round(user_data.get("balance", 150.0), 2)
-    bonus_claimed = user_data.get("bonus_claimed", False)
-    if current_balance < 100 and not bonus_claimed:
-        keyboard_inline.insert(0, [InlineKeyboardButton("🎁 বোনাস নিন (৩০০ টাকা)", callback_data="claim_special_bonus")])
-
     reply_markup_inline = InlineKeyboardMarkup(keyboard_inline)
     
     keyboard = [
@@ -644,7 +640,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     ]
     
     await update.message.reply_text(
-        f"স্বাগতম, {user.first_name}! ওয়েলকাম বোনাস হিসেবে আপনি পেয়েছেন {current_balance} টাকা। অপশন বেছে নিন:", 
+        f"স্বাগতম, {user.first_name}! আপনার বর্তমান ব্যালেন্স {current_balance} টাকা। অপশন বেছে নিন:", 
         reply_markup=ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
     )
     await update.message.reply_text(
@@ -720,7 +716,7 @@ async def withdraw_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     total_dep = user_data.get("total_deposit", 0.0)
-    if total_dep < 200:  # জমা ২০০ টাকা করা হয়েছে
+    if total_dep < 200:
         await update.message.reply_text("❌ উত্তোলন করতে হলে কমপক্ষে **২০০ টাকা জমা** করতে হবে!")
         return
 
@@ -801,6 +797,41 @@ async def broadcast_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except Exception as e:
         await update.message.reply_text(f"❌ সমস্যা হয়েছে: {str(e)}")
 
+# নতুন অ্যাডমিন কমান্ড: সবার ব্যালেন্সে একসাথে ৩০০ টাকা যোগ করার জন্য
+async def add_bonus_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user = update.effective_user
+    if user.id != ADMIN_ID:
+        return
+
+    try:
+        all_users = list(users_collection.find())
+        success_count = 0
+
+        await update.message.reply_text("⏳ সকল ইউজারের ব্যালেন্সে ৩০০ টাকা করে যোগ করা হচ্ছে...")
+
+        for u in all_users:
+            target_user_id = u.get("user_id")
+            current_bal = u.get("balance", 0.0)
+            new_bal = round(current_bal + 300.0, 2)
+            
+            # ডাটাবেস আপডেট
+            users_collection.update_one({"user_id": target_user_id}, {"$set": {"balance": new_bal}})
+            success_count += 1
+
+            # ইউজারকে নোটিফিকেশন পাঠানো
+            try:
+                await context.bot.send_message(
+                    chat_id=target_user_id,
+                    text="🎁 **বিশাল উপহার বা বোনাস!**\n\nঅফিসিয়াল ঘোষণা অনুযায়ী আপনার অ্যাকাউন্টে সফলভাবে **৩০০ টাকা স্পেশাল বোনাস** যোগ করা হয়েছে! 💰\n\nএখনই গেম খেলে ইনকাম শুরু করুন।",
+                    parse_mode="Markdown"
+                )
+            except Exception:
+                pass
+
+        await update.message.reply_text(f"✅ সফলভাবে মোট {success_count} জন ইউজারের ব্যালেন্সে ৩০০ টাকা করে যোগ করা হয়েছে!")
+    except Exception as e:
+        await update.message.reply_text(f"❌ সমস্যা হয়েছে: {str(e)}")
+
 async def handle_request(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not update.message or not update.message.text: return
     text = update.message.text.strip()
@@ -865,31 +896,6 @@ async def handle_request(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
-    
-    if query.data == "claim_special_bonus":
-        user_id = query.from_user.id
-        user_data = get_user_data(user_id)
-        
-        if user_data.get("bonus_claimed", False):
-            await query.edit_message_text("❌ আপনি ইতিমধ্যে এই বোনাসটি গ্রহণ করেছেন!")
-            return
-            
-        current_balance = user_data.get("balance", 0.0)
-        if current_balance < 100:
-            new_balance = round(current_balance + 300.0, 2)
-            update_user_field(user_id, {"balance": new_balance, "bonus_claimed": True})
-            
-            web_app_url = "https://telegram-bot-oh28.onrender.com"
-            support_url = f"https://t.me/{SUPPORT_USERNAME}"
-            new_keyboard = [
-                [InlineKeyboardButton("🎮 গেম খেলুন (Mini App)", web_app={"url": web_app_url})],
-                [InlineKeyboardButton("👨‍💻 লাইভ সাপোর্ট (Live Support)", url=support_url)]
-            ]
-            await query.edit_message_reply_markup(reply_markup=InlineKeyboardMarkup(new_keyboard))
-            await query.message.reply_text(f"🎉 অভিনন্দন! সফলভাবে ৩০০ টাকা বোনাস পেয়েছেন। নতুন ব্যালেন্স: {new_balance} টাকা।")
-        else:
-            await query.edit_message_text("❌ আপনার ব্যালেন্স ১০০ টাকার বেশি থাকায় এই বোনাস প্রযোজ্য নয়।")
-        return
 
     data_parts = query.data.split("_")
     
@@ -940,6 +946,7 @@ def main():
     app_bot.add_handler(CommandHandler("totalusers", total_users_command))
     app_bot.add_handler(CommandHandler("userlist", userlist_command))
     app_bot.add_handler(CommandHandler("broadcast", broadcast_command))
+    app_bot.add_handler(CommandHandler("addbonus", add_bonus_command))  # নতুন অ্যাডমিন কমান্ড রেজিস্টার করা হলো
     app_bot.add_handler(CallbackQueryHandler(button_click))
     app_bot.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_request))
     
