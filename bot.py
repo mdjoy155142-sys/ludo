@@ -1009,7 +1009,9 @@ def main():
     app_bot.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_request))
     
     print(f"বট এবং ফ্লাস্ক সার্ভার সফলভাবে চালু হয়েছে... (এক্সচেঞ্জ রেট: ১ ডলার = {EXCHANGE_RATE} টাকা)")
-    app_bot.run_polling()
+    
+    # drop_pending_updates=True যুক্ত করা হয়েছে যাতে কনফ্লিক্ট না করে
+    app_bot.run_polling(drop_pending_updates=True)
 
 if __name__ == "__main__":
     main()
