@@ -27,7 +27,7 @@ users_collection = db["users"]
 
 pending_withdrawals = {}
 
-# ডাটা ফেচ বা পাওয়ার ফাংশন (নতুন ইউজার হলে স্বয়ংক্রিয়ভাবে ডাটা তৈরি করবে)
+# ডাটা ফেচ বা পাওয়ার ফাংশন
 def get_user_data(user_id):
     user_data = users_collection.find_one({"user_id": user_id})
     if not user_data:
@@ -233,7 +233,7 @@ HTML_TEMPLATE = """
 
         const usernames = ["rahim_99", "karim_bd", "tanvir_x", "sakib_pro", "fahim_77", "imon_vip", "hasan_sk", "shanto_007", "nabil_11", "arif_king", "joy_gamer", "fahad_ff", "rifat_999", "mehedi_24", "tanim_boss"];
         const gamesList = ["রকেট ক্র্যাশ", "স্লট মেশিন", "লাকি স্পিন", "বক্সিং কিং"];
-        const paymentMethods = ["বিকাশ", "নগদ", "রকেট"];
+        const paymentMethods = ["বিকাশ", "নগদ", "বাইন্যান্স (Binance Pay)"];
 
         function generateAutoNotification() {
             let user = usernames[Math.floor(Math.random() * usernames.length)] + Math.floor(Math.random() * 90 + 10);
@@ -670,10 +670,47 @@ async def deposit_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         await context.bot.send_message(
             ADMIN_ID, 
-            f"📥 নতুন জমা রিকোয়েস্ট!\n👤 ইউজার: {user.first_name}\n💰 পরিমাণ: {amount}\n🆔 TrxID: {trx}", 
+            f"📥 নতুন বিকাশ জমা রিকোয়েস্ট!\n👤 ইউজার: {user.first_name}\n💰 পরিমাণ: {amount}\n🆔 TrxID: {trx}", 
             reply_markup=InlineKeyboardMarkup(keyboard)
         )
         await update.message.reply_text("✅ আপনার জমা রিকোয়েস্ট অ্যাডমিনের কাছে পাঠানো হয়েছে।")
+    except Exception as e:
+        await update.message.reply_text("❌ দুঃখিত, রিকোয়েস্ট পাঠাতে সমস্যা হয়েছে।")
+
+# বাইন্যান্স (Binance) জমা কমান্ড (১ ডলার = ১২৬ টাকা উল্লেখসহ)
+async def binance_deposit_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user = update.effective_user
+    text = update.message.text
+    parts = text.replace("/binancedeposit", "").strip().split()
+    
+    if len(parts) < 2:
+        await update.message.reply_text("সঠিক নিয়ম: /binancedeposit <ইউএসডিটি_পরিমাণ> <Binance_Pay_ID>\nউদাহরণ: /binancedeposit 10 123456789\n*(নোট: ১ ডলার = ১২৬ টাকা হিসেবে মোট টাকা যোগ হবে)*")
+        return
+        
+    usdt_str, binance_id = parts[0], parts[1]
+    try:
+        usdt_amount = float(usdt_str)
+        if usdt_amount <= 0: raise ValueError()
+    except ValueError:
+        await update.message.reply_text("❌ জমার পরিমাণ সঠিক সংখ্যা হতে হবে।")
+        return
+
+    # ১ ডলার = ১২৬ টাকা হিসাব করে মোট টাকা বের করা
+    amount = usdt_amount * 126
+
+    keyboard = [
+        [
+            InlineKeyboardButton("✅ Approve", callback_data=f"dep_approve_{user.id}_{amount}"),
+            InlineKeyboardButton("❌ Reject", callback_data=f"dep_reject_{user.id}_{amount}")
+        ]
+    ]
+    try:
+        await context.bot.send_message(
+            ADMIN_ID, 
+            f"🟡 নতুন বাইন্যান্স (Binance Pay) জমা রিকোয়েস্ট!\n👤 ইউজার: {user.first_name} (`{user.id}`)\n💵 ইউএসডিটি: {usdt_amount} $\n💰 সমপরিমাণ টাকা (১$ = ১২৬৳): {amount} টাকা\n🆔 Binance Pay ID: {binance_id}", 
+            reply_markup=InlineKeyboardMarkup(keyboard)
+        )
+        await update.message.reply_text(f"✅ আপনার বাইন্যান্স জমা রিকোয়েস্ট অ্যাডমিনের কাছে পাঠানো হয়েছে। ({usdt_amount}$ = {amount} টাকা)")
     except Exception as e:
         await update.message.reply_text("❌ দুঃখিত, রিকোয়েস্ট পাঠাতে সমস্যা হয়েছে।")
 
@@ -871,10 +908,14 @@ async def handle_request(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(f"💰 বর্তমান ব্যালেন্স: {bal} টাকা")
     elif "জমা" in text:
         await update.message.reply_text(
-            "📥 টাকা জমা করুন:\n\n"
-            "বিকাশ মার্চেন্ট নম্বর: `01919130118`\n"
-            "*(টাকা পাঠানোর সময় পেমেন্ট অপশন ব্যবহার করুন)*\n\n"
-            "নিয়ম: /deposit <পরিমাণ> <TrxID>"
+            "📥 টাকা অথবা বাইন্যান্সের মাধ্যমে জমা করুন:\n\n"
+            "🔴 **বিকাশ মার্চেন্ট:** `01919130118`\n"
+            "নিয়ম: `/deposit <পরিমাণ> <TrxID>`\n\n"
+            "🟡 **বাইন্যান্স পে (Binance Pay ID):**\n"
+            "বাইন্যান্স আইডি: `আপনার_বাইন্যান্স_আইডি_এখানে_দিন`\n"
+            "*(রেট: ১ ডলার = ১২৬ টাকা)*\n"
+            "নিয়ম: `/binancedeposit <ইউএসডিটি_পরিমাণ> <Binance_Pay_ID>`",
+            parse_mode="Markdown"
         )
     elif "উত্তোলন" in text:
         await update.message.reply_text("উত্তোলন নিয়ম: /withdraw <নম্বর> <পরিমাণ>")
@@ -961,6 +1002,7 @@ def main():
     app_bot = ApplicationBuilder().token(TOKEN).build()
     app_bot.add_handler(CommandHandler("start", start))
     app_bot.add_handler(CommandHandler("deposit", deposit_command))
+    app_bot.add_handler(CommandHandler("binancedeposit", binance_deposit_command))
     app_bot.add_handler(CommandHandler("withdraw", withdraw_command))
     app_bot.add_handler(CommandHandler("totalusers", total_users_command))
     app_bot.add_handler(CommandHandler("userlist", userlist_command))
@@ -969,7 +1011,7 @@ def main():
     app_bot.add_handler(CallbackQueryHandler(button_click))
     app_bot.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_request))
     
-    print("বট এবং ফ্লাস্ক সার্ভার ফুল আপডেট ভার্সনে সফলভাবে চালু হয়েছে...")
+    print("বট এবং ফ্লাস্ক সার্ভার (১ ডলার = ১২৬ টাকা রেটসহ) সফলভাবে চালু হয়েছে...")
     app_bot.run_polling()
 
 if __name__ == "__main__":
