@@ -60,6 +60,7 @@ HTML_TEMPLATE = """
 <html lang="bn">
 <head>
     <meta charset="UTF-8">
+    <meta name="monetag" content="3f925b759b7430dbc88461bd24bb4967">
     <title>প্রো আর্নিং গেম জোন - প্রিমিয়াম এডিশন</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
@@ -551,6 +552,11 @@ HTML_TEMPLATE = """
 @app.route('/')
 def index():
     return render_template_string(HTML_TEMPLATE)
+
+# রেন্ডারের জন্য হেলথ চেক রুট (Health Check Route)
+@app.route('/health')
+def health_check():
+    return jsonify({"status": "healthy", "bot": "running"})
 
 @app.route('/get_balance/<int:user_id>')
 def get_balance(user_id):
