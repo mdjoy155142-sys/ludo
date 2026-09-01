@@ -3,7 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <title>প্রো আর্নিং গেম জোন - প্রিমিয়াম এডিশন</title>
-
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         body { background: #0b0f19; color: white; text-align: center; font-family: sans-serif; padding: 10px; margin: 0; }
@@ -44,7 +43,7 @@
         </div>
     </div>
 
-    <!-- ১. রকেট ক্র্যাশ (৭৫% উইন মোড) -->
+    <!-- ১. রকেট ক্র্যাশ -->
     <div id="rocketGame" class="game-section box">
         <button class="back-btn" onclick="closeGame()">⬅ ব্যাক</button>
         <h3 style="margin:0;">🚀 রকেট ক্র্যাশ</h3>
@@ -56,23 +55,20 @@
         <button class="btn" id="rocketBtn" onclick="toggleRocketGame()">বেট নিশ্চিত করুন</button>
     </div>
 
-    <!-- ২. স্লট মেশিন (৩x৩ ঘর) -->
+    <!-- ২. স্লট মেশিন -->
     <div id="slotsGame" class="game-section box">
         <button class="back-btn" onclick="closeGame()">⬅ ব্যাক</button>
         <h3 style="margin:0;">🎰 স্লট মেশিন (৩×৩ ঘর)</h3>
         <canvas id="slotsCanvas" width="350" height="210"></canvas>
-        
         <select id="betMode">
             <option value="single">১টি সারি</option>
             <option value="all">৩টি সারি</option>
         </select>
-
         <select id="selectedRow">
             <option value="0">⬆ ওপরের সারি</option>
             <option value="1" selected>⏺ মাঝের সারি</option>
             <option value="2">⬇ নিচের সারি</option>
         </select>
-
         <input type="number" id="slotsBet" value="50" min="1">
         <p id="slotsStatus" style="color: #94a3b8; font-size: 12px; margin: 5px;">স্লট স্পিন করুন</p>
         <button class="btn" id="slotsBtn" onclick="playSlotsGame()">স্লট ঘোড়ান</button>
@@ -98,14 +94,6 @@
         <input type="number" id="spinBet" value="50" min="1">
         <p id="spinStatus" style="color: #94a3b8; font-size: 12px; margin: 5px;">স্পিন করতে বেট দিন</p>
         <button class="btn" id="spinBtn" onclick="playRealWheel()">চাকা ঘোরান</button>
-    </div>
-
-    <!-- টাকা উত্তোলন -->
-    <div class="box">
-        <h3>📤 টাকা উত্তোলন</h3>
-        <input type="text" id="witPhone" placeholder="বিকাশ নম্বর">
-        <input type="number" id="witAmount" placeholder="পরিমাণ (১২০০+)" min="1">
-        <button class="btn stop-btn" style="margin-top: 5px;" onclick="submitWithdraw()">উত্তোলন রিকোয়েস্ট</button>
     </div>
 
     <script>
@@ -152,13 +140,7 @@
         function openGame(gameId) {
             document.querySelectorAll('.game-section').forEach(s => s.classList.remove('active-section'));
             document.getElementById(gameId).classList.add('active-section');
-            
-            if (gameId === 'rocketGame') {
-                if (!isRocketRunning) startRocketLoop();
-            } else {
-                isRocketRunning = false;
-            }
-
+            if (gameId === 'rocketGame') { if (!isRocketRunning) startRocketLoop(); } else { isRocketRunning = false; }
             if (gameId === 'slotsGame') drawSlotsGrid([['🍒', '🍋', '🔔'],['⭐', '💎', '🍉'],['🔔', '🍒', '🍋']], "স্লট স্পিন করুন");
             else if (gameId === 'boxingGame') drawBoxing(['🥊', '🥋', '🏆'], "বক্সিং স্পিন করুন");
             else if (gameId === 'spinGame') drawWheel(0);
@@ -169,7 +151,7 @@
             document.getElementById('gameLobby').classList.add('active-section');
         }
 
-        // --- ১. রকেট ক্র্যাশ (৭৫% উইন মোড) ---
+        // --- রকেট ক্র্যাশ লজিক ---
         const rocketCanvas = document.getElementById('rocketCanvas');
         const rctx = rocketCanvas.getContext('2d');
         let rocketState = "WAITING", multiplier = 1.00, crashAt = 1.00, rocketBetVal = 0, hasRocketBet = false, isRocketRunning = false, rx = 20, ry = 150;
@@ -195,7 +177,6 @@
         function launchRealRocket() {
             if (!isRocketRunning) return;
             rocketState = "FLYING";
-
             let isWinChance = Math.random() < 0.75;
             if (isWinChance) {
                 crashAt = parseFloat((Math.random() * 4 + 2).toFixed(2)); 
@@ -210,7 +191,6 @@
             
             let flyInterval = setInterval(async () => {
                 if (!isRocketRunning || rocketState !== "FLYING") { clearInterval(flyInterval); return; }
-                
                 multiplier += (multiplier < 2.0 ? 0.02 : 0.05);
                 if (rx < 250) rx += 1.2;
                 if (ry > 40) ry -= 0.9;
@@ -227,7 +207,6 @@
                 if (multiplier >= crashAt) {
                     clearInterval(flyInterval);
                     rocketState = "CRASHED";
-                    
                     rocketHistory.unshift(crashAt.toFixed(2) + "x");
                     if(rocketHistory.length > 5) rocketHistory.pop();
                     updateRocketHistoryUI();
@@ -235,7 +214,6 @@
                     if (document.getElementById('rocketGame').classList.contains('active-section')) {
                         drawRocketScene("💥 ক্র্যাশ " + crashAt + "x", "#ef4444");
                     }
-                    
                     if(hasRocketBet) {
                         hasRocketBet = false;
                         document.getElementById("rocketStatus").innerText = "💥 ক্র্যাশ হয়ে গেছে! বেট হেরেছেন।";
@@ -256,12 +234,10 @@
             rctx.clearRect(0, 0, rocketCanvas.width, rocketCanvas.height);
             rctx.strokeStyle = '#1e293b'; rctx.lineWidth = 1;
             rctx.beginPath(); rctx.moveTo(0, 150); rctx.lineTo(350, 150); rctx.stroke();
-
             if (rocketState === "FLYING") {
                 rctx.strokeStyle = '#22c55e'; rctx.lineWidth = 3;
                 rctx.beginPath(); rctx.moveTo(20, 150); rctx.lineTo(rx, ry); rctx.stroke();
             }
-
             rctx.font = "24px sans-serif";
             rctx.fillText(rocketState === "CRASHED" ? "💥" : "🚀", rx, ry);
             rctx.fillStyle = color; rctx.font = "bold 22px sans-serif"; rctx.textAlign = "center";
@@ -295,7 +271,7 @@
             }
         }
 
-        // --- ২. স্লট মেশিন ---
+        // --- স্লট মেশিন লজিক ---
         const slotsCanvas = document.getElementById('slotsCanvas');
         const slotCtx = slotsCanvas.getContext('2d');
 
@@ -303,7 +279,6 @@
             slotCtx.clearRect(0, 0, slotsCanvas.width, slotsCanvas.height);
             let cellWidth = 85, cellHeight = 50, startX = 45, startY = 10;
             slotCtx.font = "26px sans-serif"; slotCtx.textAlign = "center"; slotCtx.textBaseline = "middle";
-
             for (let r = 0; r < 3; r++) {
                 for (let c = 0; c < 3; c++) {
                     let bx = startX + c * (cellWidth + 10);
@@ -322,47 +297,35 @@
             let mode = document.getElementById('betMode').value;
             let chosenRow = parseInt(document.getElementById('selectedRow').value);
             let btn = document.getElementById('slotsBtn');
-            
             if (isNaN(bet) || bet <= 0 || bet > balance) { alert("পর্যাপ্ত ব্যালেন্স নেই!"); return; }
-            
             btn.disabled = true;
             await updateBalanceInBackend(-bet);
-
-            let icons = ['🍒', '🍋', '🔔', '⭐', '💎', '🍉']; 
-            let count = 0;
-            
+            let icons = ['🍒', '🍋', '🔔', '⭐', '💎', '🍉'], count = 0;
             let interval = setInterval(async () => {
                 count++;
                 let randomGrid = Array.from({length:3}, ()=>Array.from({length:3}, ()=>icons[Math.floor(Math.random()*icons.length)]));
                 drawSlotsGrid(randomGrid, "স্লট রোল হচ্ছে...");
-                
                 if (count > 12) {
                     clearInterval(interval);
                     btn.disabled = false;
-                    
                     let finalGrid = Array.from({length:3}, ()=>Array.from({length:3}, ()=>icons[Math.floor(Math.random()*icons.length)]));
-                    let multiplier = 0;
-                    let message = "❌ মিল হয়নি, হেরে গেছেন।";
-
+                    let multiplier = 0, message = "❌ মিল হয়নি, হেরে গেছেন।";
                     if (Math.random() < 0.35) { 
                         multiplier = 2; message = "🎉 ২ গুণ জিতেছেন!";
                         let winIcon = icons[Math.floor(Math.random() * icons.length)];
                         let winRow = (mode === 'single') ? chosenRow : 1;
                         finalGrid[winRow] = [winIcon, winIcon, winIcon];
                     }
-
                     if (multiplier > 0) {
                         let prize = bet * multiplier;
                         await updateBalanceInBackend(prize);
-                        drawSlotsGrid(finalGrid, message);
-                    } else {
-                        drawSlotsGrid(finalGrid, message);
                     }
+                    drawSlotsGrid(finalGrid, message);
                 }
             }, 70);
         }
 
-        // --- ৩. বক্সিং কিং স্লট ---
+        // --- বক্সিং গেম লজিক ---
         const boxingCanvas = document.getElementById('boxingCanvas');
         const bCtx = boxingCanvas.getContext('2d');
         function drawBoxing(symbols, text) {
@@ -399,7 +362,7 @@
             }, 70);
         }
 
-        // --- ৪. লাকি স্পিন হুইল ---
+        // --- লাকি স্পিন হুইল লজিক ---
         const wheelCanvas = document.getElementById('realWheelCanvas');
         const wCtx = wheelCanvas.getContext('2d');
         const slices = [
@@ -431,30 +394,24 @@
             let bet = parseFloat(document.getElementById('spinBet').value);
             let status = document.getElementById('spinStatus');
             let spinBtn = document.getElementById('spinBtn');
-
             if (isNaN(bet) || bet <= 0 || bet > balance) { alert("সঠিক বেট বা পর্যাপ্ত ব্যালেন্স নেই!"); return; }
-
             spinBtn.disabled = true;
             await updateBalanceInBackend(-bet);
             status.innerText = "🎡 চাকা ঘুরছে...";
-
             let winningIndex = Math.floor(Math.random() * slices.length);
             let sliceAngle = (2 * Math.PI) / slices.length;
             let targetAngle = (2 * Math.PI * 6) + (1.5 * Math.PI) - (winningIndex * sliceAngle + sliceAngle / 2);
-
             let currentAngle = 0, totalFrames = 60, frame = 0;
             let wheelInterval = setInterval(async () => {
                 frame++;
                 let progress = frame / totalFrames;
                 currentAngle = targetAngle * (1 - Math.pow(1 - progress, 3));
                 drawWheel(currentAngle);
-
                 if (frame >= totalFrames) {
                     clearInterval(wheelInterval);
                     spinBtn.disabled = false;
                     let result = slices[winningIndex].text;
                     let mult = parseFloat(result) || 0;
-                    
                     if (mult > 0) {
                         let prize = bet * mult;
                         await updateBalanceInBackend(prize);
@@ -465,13 +422,6 @@
                 }
             }, 30);
         }
-
-        function submitWithdraw() {
-            let phone = document.getElementById("witPhone").value;
-            let amount = document.getElementById("witAmount").value;
-            if (!phone || !amount) { alert("বিকাশ নম্বর ও পরিমাণ প্রদান করুন!"); return; }
-            window.open(`https://t.me/Fastpay8_bot?text=/withdraw%20${phone}%20${amount}`, '_blank');
-        }
     </script>
 </body>
-    </html>
+</html>
