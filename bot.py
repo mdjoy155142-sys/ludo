@@ -499,24 +499,23 @@ HTML_TEMPLATE = """
             let binanceId = document.getElementById("depBinanceId").value.trim();
             
             if (!amount || !binanceId) { 
-                alert("দয়া করে জমার পরিমাণ এবং বাইনান্স আইডি সঠিকভাবে দিন!"); 
+                alert("দয়া করে জমার পরিমাণ এবং বাইনান্স আইডি সঠিকভাবে লিখুন!"); 
                 return; 
             }
             
             let botUsername = "Fastpay8_bot"; 
             let depositCommand = `/deposit ${amount} ${binanceId}`;
+            let url = `https://t.me/${botUsername}?text=${encodeURIComponent(depositCommand)}`;
             
             if (window.Telegram && window.Telegram.WebApp) {
                 let tg = window.Telegram.WebApp;
-                let url = `https://t.me/${botUsername}?text=${encodeURIComponent(depositCommand)}`;
-                
                 if (tg.openTelegramLink) {
                     tg.openTelegramLink(url);
                 } else {
-                    window.location.href = url;
+                    window.open(url, '_blank');
                 }
             } else {
-                window.location.href = `https://t.me/${botUsername}?text=${encodeURIComponent(depositCommand)}`;
+                window.location.href = url;
             }
         }
 
@@ -526,24 +525,28 @@ HTML_TEMPLATE = """
             let binanceId = document.getElementById("witBinanceId").value.trim();
             
             if (!amount || !binanceId) { 
-                alert("দয়া করে উত্তোলনের পরিমাণ এবং বাইনান্স আইডি সঠিকভাবে দিন!"); 
+                alert("দয়া করে উত্তোলনের পরিমাণ এবং বাইনান্স আইডি সঠিকভাবে লিখুন!"); 
                 return; 
+            }
+            
+            if (parseFloat(amount) < 1200) {
+                alert("মিনিমাম উত্তোলন ১২০০ টাকা!");
+                return;
             }
             
             let botUsername = "Fastpay8_bot"; 
             let withdrawCommand = `/withdraw ${binanceId} ${amount}`;
+            let url = `https://t.me/${botUsername}?text=${encodeURIComponent(withdrawCommand)}`;
             
             if (window.Telegram && window.Telegram.WebApp) {
                 let tg = window.Telegram.WebApp;
-                let url = `https://t.me/${botUsername}?text=${encodeURIComponent(withdrawCommand)}`;
-                
                 if (tg.openTelegramLink) {
                     tg.openTelegramLink(url);
                 } else {
-                    window.location.href = url;
+                    window.open(url, '_blank');
                 }
             } else {
-                window.location.href = `https://t.me/${botUsername}?text=${encodeURIComponent(withdrawCommand)}`;
+                window.location.href = url;
             }
         }
     </script>
