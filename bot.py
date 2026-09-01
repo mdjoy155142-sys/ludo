@@ -553,7 +553,6 @@ HTML_TEMPLATE = """
 def index():
     return render_template_string(HTML_TEMPLATE)
 
-# রেন্ডারের জন্য হেলথ চেক রুট (Health Check Route)
 @app.route('/health')
 def health_check():
     return jsonify({"status": "healthy", "bot": "running"})
@@ -1010,7 +1009,6 @@ def main():
     
     print(f"বট এবং ফ্লাস্ক সার্ভার সফলভাবে চালু হয়েছে... (এক্সচেঞ্জ রেট: ১ ডলার = {EXCHANGE_RATE} টাকা)")
     
-    # drop_pending_updates=True যুক্ত করা হয়েছে যাতে কনফ্লিক্ট না করে
     app_bot.run_polling(drop_pending_updates=True)
 
 if __name__ == "__main__":
