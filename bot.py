@@ -738,7 +738,6 @@ async def total_users_command(update: Update, context: ContextTypes.DEFAULT_TYPE
     except Exception as e:
         await update.message.reply_text(f"❌ সমস্যা: {str(e)}")
 
-# ব্লক ইউজার ক্লিনআপসহ আপডেট করা ইউজারলিস্ট কমান্ড
 async def userlist_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     if user.id != ADMIN_ID: return
@@ -748,32 +747,9 @@ async def userlist_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await update.message.reply_text("❌ কোনো ইউজার পাওয়া যায়নি।")
             return
             
-        await update.message.reply_text("⏳ ইউজার লিস্ট চেক করা হচ্ছে এবং ব্লক ইউজারদের ক্লিন করা হচ্ছে...")
-        
-        valid_users = []
-        deleted_count = 0
-
-        for u in all_users:
-            target_user_id = u.get('user_id')
-            try:
-                # ইউজারের স্ট্যাটাস চেক করার জন্য টাইপিং অ্যাকশন পাঠানো
-                await context.bot.send_chat_action(chat_id=target_user_id, action="typing")
-                valid_users.append(u)
-            except Exception as e:
-                error_str = str(e).lower()
-                if "blocked" in error_str or "forbidden" in error_str or "chat not found" in error_str:
-                    users_collection.delete_one({"user_id": target_user_id})
-                    deleted_count += 1
-                else:
-                    valid_users.append(u)
-
-        if not valid_users:
-            await update.message.reply_text(f"❌ কোনো সক্রিয় ইউজার নেই। {deleted_count}টি ব্লক করা ইউজার ডিলিট করা হয়েছে।")
-            return
-
-        await update.message.reply_text(f"📋 **সক্রিয় ইউজারের তথ্য (মোট: {len(valid_users)} জন, ডিলিট হয়েছে: {deleted_count} জন):**")
+        await update.message.reply_text(f"📋 **ইউজারের তথ্য (মোট: {len(all_users)} জন):**")
         chunk_text = ""
-        for idx, u in enumerate(valid_users, 1):
+        for idx, u in enumerate(all_users, 1):
             line = f"{idx}. আইডি: `{u.get('user_id')}`\n   💰 ব্যালেন্স: {round(u.get('balance', 0.0), 2)}৳ | জমা: {round(u.get('total_deposit', 0.0), 2)}৳ | রেফার: {len(u.get('referrals', []))}\n\n"
             if len(chunk_text) + len(line) > 3500:
                 await update.message.reply_text(chunk_text, parse_mode="Markdown")
@@ -784,7 +760,6 @@ async def userlist_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except Exception as e:
         await update.message.reply_text(f"❌ সমস্যা: {str(e)}")
 
-# ব্রডকাস্ট এবং ব্লক ইউজার ক্লিনআপ কমান্ড
 async def broadcast_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     if user.id != ADMIN_ID:
@@ -799,9 +774,8 @@ async def broadcast_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         all_users = list(users_collection.find({}, {"user_id": 1}))
         success_count = 0
         fail_count = 0
-        deleted_count = 0
 
-        await update.message.reply_text("⏳ সবার কাছে নোটিফিকেশন পাঠানো এবং ব্লক ইউজারদের ক্লিন করা শুরু হয়েছে...")
+        await update.message.reply_text("⏳ সবার কাছে নোটিফিকেশন পাঠানো শুরু হয়েছে...")
 
         for u in all_users:
             target_user_id = u.get("user_id")
@@ -812,23 +786,17 @@ async def broadcast_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     parse_mode="Markdown"
                 )
                 success_count += 1
-            except Exception as e:
+            except Exception:
                 fail_count += 1
-                error_str = str(e).lower()
-                if "blocked" in error_str or "forbidden" in error_str or "chat not found" in error_str:
-                    users_collection.delete_one({"user_id": target_user_id})
-                    deleted_count += 1
 
         await update.message.reply_text(
-            f"✅ **ব্রডকাস্ট ও ক্লিনআপ সম্পন্ন!**\n\n"
+            f"✅ **ব্রডকাস্ট সম্পন্ন!**\n\n"
             f"📤 সফলভাবে পাঠানো হয়েছে: {success_count} জন\n"
-            f"❌ ব্যর্থ হয়েছে: {fail_count} জন\n"
-            f"🗑️ ব্লক করা ইউজার ডিলিট করা হয়েছে: {deleted_count} জন"
+            f"❌ ব্যর্থ হয়েছে: {fail_count} জন"
         )
     except Exception as e:
         await update.message.reply_text(f"❌ সমস্যা হয়েছে: {str(e)}")
 
-# অ্যাডমিন কমান্ড: সবার ব্যালেন্সে একসাথে ৩০০ টাকা যোগ করার জন্য
 async def add_bonus_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     if user.id != ADMIN_ID:
