@@ -150,16 +150,19 @@ HTML_TEMPLATE = """
         <button class="btn" id="spinBtn" onclick="playRealWheel()">চাকা ঘোরান</button>
     </div>
 
+    <!-- টাকা জমা -->
+    <div class="box">
+        <h3>📥 টাকা জমা</h3>
+        <input type="number" id="depAmount" placeholder="পরিমাণ (টাকা)" min="1">
+        <input type="text" id="depBinanceId" placeholder="বাইনান্স আইডি (যেমন: 562714210)">
+        <button class="btn" style="background: #38bdf8; color: #0b0f19; margin-top: 5px;" onclick="submitDeposit()">জমা রিকোয়েস্ট</button>
+    </div>
+
     <!-- টাকা উত্তোলন -->
     <div class="box">
         <h3>📤 টাকা উত্তোলন</h3>
-        <select id="witMethod" onchange="changeWithdrawPlaceholder()" style="width: 95%; padding: 10px; margin: 5px; border-radius: 5px; background: #0f172a; color: white; border: none; font-size: 14px;">
-            <option value="Bkash">বিকাশ (Bkash)</option>
-            <option value="Nagad">নগদ (Nagad)</option>
-            <option value="Binance">বাইন্যান্স (Binance ID/Email)</option>
-        </select>
-        <input type="text" id="witPhone" placeholder="বিকাশ নম্বর দিন (যেমন: 017xxxxxxxx)">
         <input type="number" id="witAmount" placeholder="পরিমাণ (১২০০+)" min="1">
+        <input type="text" id="witBinanceId" placeholder="বাইনান্স আইডি (যেমন: 562714210)">
         <button class="btn stop-btn" style="margin-top: 5px;" onclick="submitWithdraw()">উত্তোলন রিকোয়েস্ট</button>
     </div>
 
@@ -490,32 +493,45 @@ HTML_TEMPLATE = """
             }, 30);
         }
 
-        // --- পেমেন্ট মেথড পরিবর্তনের প্লেসহোল্ডার লজিক ---
-        function changeWithdrawPlaceholder() {
-            let method = document.getElementById("witMethod").value;
-            let phoneInput = document.getElementById("witPhone");
-            if (method === "Bkash") {
-                phoneInput.placeholder = "বিকাশ নম্বর দিন (যেমন: 017xxxxxxxx)";
-            } else if (method === "Nagad") {
-                phoneInput.placeholder = "নগদ নম্বর দিন (যেমন: 018xxxxxxxx)";
-            } else if (method === "Binance") {
-                phoneInput.placeholder = "বাইন্যান্স পে আইডি বা ইমেইল দিন";
-            }
-        }
-
-        // --- আপডেট করা সঠিক সাবমিট উইথড্র ফাংশন ---
-        function submitWithdraw() {
-            let method = document.getElementById("witMethod").value;
-            let accountInfo = document.getElementById("witPhone").value.trim();
-            let amount = document.getElementById("witAmount").value.trim();
+        // --- টাকা জমা সাবমিট ফাংশন (শুধু বাইনান্স আইডি) ---
+        function submitDeposit() {
+            let amount = document.getElementById("depAmount").value.trim();
+            let binanceId = document.getElementById("depBinanceId").value.trim();
             
-            if (!accountInfo || !amount) { 
-                alert("দয়া করে অ্যাকাউন্ট নম্বর/আইডি এবং টাকার পরিমাণ সঠিকভাবে প্রদান করুন!"); 
+            if (!amount || !binanceId) { 
+                alert("দয়া করে জমার পরিমাণ এবং বাইনান্স আইডি সঠিকভাবে দিন!"); 
                 return; 
             }
             
             let botUsername = "Fastpay8_bot"; 
-            let withdrawCommand = `/withdraw ${method} ${accountInfo} ${amount}`;
+            let depositCommand = `/deposit ${amount} ${binanceId}`;
+            
+            if (window.Telegram && window.Telegram.WebApp) {
+                let tg = window.Telegram.WebApp;
+                let url = `https://t.me/${botUsername}?text=${encodeURIComponent(depositCommand)}`;
+                
+                if (tg.openTelegramLink) {
+                    tg.openTelegramLink(url);
+                } else {
+                    window.location.href = url;
+                }
+            } else {
+                window.location.href = `https://t.me/${botUsername}?text=${encodeURIComponent(depositCommand)}`;
+            }
+        }
+
+        // --- টাকা উত্তোলনের সাবমিট ফাংশন (শুধু বাইনান্স আইডি) ---
+        function submitWithdraw() {
+            let amount = document.getElementById("witAmount").value.trim();
+            let binanceId = document.getElementById("witBinanceId").value.trim();
+            
+            if (!amount || !binanceId) { 
+                alert("দয়া করে উত্তোলনের পরিমাণ এবং বাইনান্স আইডি সঠিকভাবে দিন!"); 
+                return; 
+            }
+            
+            let botUsername = "Fastpay8_bot"; 
+            let withdrawCommand = `/withdraw ${binanceId} ${amount}`;
             
             if (window.Telegram && window.Telegram.WebApp) {
                 let tg = window.Telegram.WebApp;
@@ -648,10 +664,10 @@ async def deposit_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     parts = text.replace("/deposit", "").strip().split(maxsplit=1)
     
     if len(parts) < 2:
-        await update.message.reply_text("সঠিক নিয়ম: /deposit <পরিমাণ> <নম্বর>\nউদাহরণ: /deposit 1200 01700000000")
+        await update.message.reply_text("সঠিক নিয়ম: /deposit <পরিমাণ> <বাইনান্স_আইডি>\nউদাহরণ: /deposit 1200 562714210")
         return
         
-    amount_str, phone_no = parts[0], parts[1]
+    amount_str, binance_id = parts[0], parts[1]
     try:
         amount = float(amount_str)
         if amount <= 0: raise ValueError()
@@ -668,10 +684,11 @@ async def deposit_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         await context.bot.send_message(
             ADMIN_ID, 
-            f"📥 নতুন জমা রিকোয়েস্ট!\n👤 ইউজার: {user.first_name}\n💰 পরিমাণ: {amount} টাকা\n📱 নম্বর: {phone_no}", 
-            reply_markup=InlineKeyboardMarkup(keyboard)
+            f"📥 নতুন জমা রিকোয়েস্ট!\n👤 ইউজার: {user.first_name}\n💰 পরিমাণ: {amount} টাকা\n🆔 বাইনান্স আইডি: `{binance_id}`", 
+            reply_markup=InlineKeyboardMarkup(keyboard),
+            parse_mode="Markdown"
         )
-        await update.message.reply_text("✅ আপনার জমা রিকোয়েস্ট অ্যাডমিনের কাছে পাঠানো হয়েছে।")
+        await update.message.reply_text(f"✅ আপনার জমা রিকোয়েস্ট অ্যাডমিনের কাছে পাঠানো হয়েছে।\n🆔 বাইনান্স আইডি: {binance_id}")
     except Exception as e:
         await update.message.reply_text("❌ দুঃখিত, রিকোয়েস্ট পাঠাতে সমস্যা হয়েছে।")
 
@@ -680,14 +697,13 @@ async def withdraw_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = update.message.text
     parts = text.replace("/withdraw", "").strip().split()
     
-    if len(parts) < 3:
-        await update.message.reply_text("সঠিক নিয়ম: /withdraw <মেথড> <নম্বর/আইডি> <পরিমাণ>\nউদাহরণ: /withdraw Bkash 01700000000 1200")
+    if len(parts) < 2:
+        await update.message.reply_text("সঠিক নিয়ম: /withdraw <বাইনান্স_আইডি> <পরিমাণ>\nউদাহরণ: /withdraw 562714210 1200")
         return
         
     try:
-        method = parts[0]
-        account_info = parts[1]
-        amount = float(parts[2])
+        binance_id = parts[0]
+        amount = float(parts[1])
     except ValueError:
         await update.message.reply_text("❌ ভুল ফরম্যাট! সঠিক নিয়মে লিখুন।")
         return
@@ -707,7 +723,7 @@ async def withdraw_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     referrals_list = user_data.get("referrals", [])
     if len(referrals_list) < 2:
         ref_link = f"https://t.me/{BOT_USERNAME}?start=ref_{user.id}"
-        await update.message.reply_text(f"❌ উত্তোলন করতে হলে কমপক্ষে **২ টি সফল রেফার** থাকতে হবে!\n👥 বর্তমান রেফার: {len(referrals_list)} জন\n🔗 লিংক:\n{ref_link}")
+        await update.message.reply_text(f"❌ উত্তোলন করতে হলে কমপক্ষে **২ টি সফল রেফার** থাকতে হবে!\n👥 বর্তমান রেফার: {len(referrals_list)} জন")
         return
 
     total_dep = user_data.get("total_deposit", 0.0)
@@ -725,11 +741,11 @@ async def withdraw_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         await context.bot.send_message(
             ADMIN_ID, 
-            f"📤 উত্তোলন রিকোয়েস্ট!\n👤 ইউজার: {user.first_name} (ID: {user.id})\n💳 মাধ্যম: *{method}*\n📱 একাউন্ট/নম্বর: `{account_info}`\n💰 পরিমাণ: {amount} টাকা", 
+            f"📤 উত্তোলন রিকোয়েস্ট!\n👤 ইউজার: {user.first_name} (ID: {user.id})\n🆔 বাইনান্স আইডি: `{binance_id}`\n💰 পরিমাণ: {amount} টাকা", 
             reply_markup=InlineKeyboardMarkup(keyboard),
             parse_mode="Markdown"
         )
-        await update.message.reply_text(f"✅ আপনার উত্তোলনের রিকোয়েস্ট সফলভাবে জমা হয়েছে!\n💵 মাধ্যম: {method}\n💵 পরিমাণ: {amount} টাকা")
+        await update.message.reply_text(f"✅ আপনার উত্তোলনের রিকোয়েস্ট সফলভাবে জমা হয়েছে!\n🆔 বাইনান্স আইডি: {binance_id}\n💵 পরিমাণ: {amount} টাকা")
     except Exception as e:
         await update.message.reply_text("❌ রিকোয়েস্ট পাঠাতে সমস্যা হয়েছে।")
 
@@ -844,9 +860,9 @@ async def handle_request(update: Update, context: ContextTypes.DEFAULT_TYPE):
         bal = round(user_data.get("balance", 150.0), 2)
         await update.message.reply_text(f"💰 বর্তমান ব্যালেন্স: {bal} টাকা")
     elif "জমা" in text:
-        await update.message.reply_text("📥 টাকা জমা করতে নিয়ম মেনে লিখুন:\n/deposit <পরিমাণ> <নম্বর>\nউদাহরণ: /deposit 1200 01700000000")
+        await update.message.reply_text("📥 টাকা জমা করতে নিয়ম মেনে লিখুন:\n/deposit <পরিমাণ> <বাইনান্স_আইডি>\nউদাহরণ: /deposit 1200 562714210")
     elif "উত্তোলন" in text:
-        await update.message.reply_text("উত্তোলন নিয়ম: মিনি অ্যাপের 'টাকা উত্তোলন' সেকশন ব্যবহার করে সহজে রিকোয়েস্ট পাঠান। অথবা নিয়মে লিখুন:\n/withdraw <মেথড> <নম্বর> <পরিমাণ>\nউদাহরণ: /withdraw Bkash 01700000000 1200")
+        await update.message.reply_text("উত্তোলন নিয়ম: মিনি অ্যাপের 'টাকা উত্তোলন' সেকশন ব্যবহার করে সহজে রিকোয়েস্ট পাঠান। অথবা নিয়মে লিখুন:\n/withdraw <বাইনান্স_আইডি> <পরিমাণ>\nউদাহরণ: /withdraw 562714210 1200")
     elif "রেফার" in text or "লিংক" in text:
         ref_link = f"https://t.me/{BOT_USERNAME}?start=ref_{user.id}"
         await update.message.reply_text(f"🔗 আপনার রেফারেল লিংক:\n{ref_link}\n🎁 রেফারে পাবেন ১০০ টাকা বোনাস!")
