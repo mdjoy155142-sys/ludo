@@ -1,7 +1,6 @@
 import logging
 import json
 import os
-import threading
 from datetime import datetime, timedelta
 from flask import Flask, render_template_string, jsonify, request
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, Update
@@ -583,11 +582,6 @@ def update_balance():
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 400
 
-def run_flask():
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port, debug=False, use_reloader=False)
-
-
 # --- টেলিগ্রাম বট হ্যান্ডলার্স ---
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
@@ -993,10 +987,6 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await context.bot.send_message(target_id, f"❌ আপনার {amount} টাকা উত্তোলন রিজেক্ট করা হয়েছে।")
 
 def main():
-    flask_thread = threading.Thread(target=run_flask)
-    flask_thread.daemon = True
-    flask_thread.start()
-
     app_bot = ApplicationBuilder().token(TOKEN).build()
     app_bot.add_handler(CommandHandler("start", start))
     app_bot.add_handler(CommandHandler("binancedeposit", binance_deposit_command))
@@ -1008,10 +998,18 @@ def main():
     app_bot.add_handler(CallbackQueryHandler(button_click))
     app_bot.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_request))
     
-    print(f"বট এবং ফ্লাস্ক সার্ভার সফলভাবে চালু হয়েছে... (এক্সচেঞ্জ রেট: ১ ডলার = {EXCHANGE_RATE} টাকা)")
+    PORT = int(os.environ.get("PORT", 5000))
+    RENDER_URL = "https://telegram-bot-oh28.onrender.com"
     
-    # drop_pending_updates=True যুক্ত করা হয়েছে যাতে কনফ্লিক্ট না করে
-    app_bot.run_polling(drop_pending_updates=True)
+    print(f"বট এবং ফ্লাস্ক সার্ভার ওয়েভহুক মোডে চালু হচ্ছে...")
+    
+    # ওয়েভহুক মোড ব্যবহার করার ফলে Conflict ত্রুটি আর আসবে না
+    app_bot.run_webhook(
+        listen="0.0.0.0",
+        port=PORT,
+        secret_token="my_secure_secret_token",
+        webhook_url=f"{RENDER_URL}/{TOKEN}"
+    )
 
 if __name__ == "__main__":
     main()
