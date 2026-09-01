@@ -18,7 +18,6 @@ logging.basicConfig(format="%(asctime)s - %(name)s - %(levelname)s - %(message)s
 TOKEN = os.environ.get("BOT_TOKEN", "8713892015:AAFez0mngDbYsAxsl-aE0fQOJqnnvHh5_K8")
 ADMIN_ID = 7100342395
 BOT_USERNAME = "Fastpay8_bot"
-SUPPORT_USERNAME = "Jou904"  # লাইভ সাপোর্টের জন্য টেলিগ্রাম ইউজারনেম
 
 # MongoDB কানেকশন সেটআপ
 MONGO_URI = os.environ.get("MONGO_URI", "mongodb+srv://admin:Bashar904@cluster0.nkm8mxx.mongodb.net/?appName=Cluster0")
@@ -622,11 +621,9 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 pass
     
     web_app_url = "https://telegram-bot-oh28.onrender.com"
-    support_url = f"https://t.me/{SUPPORT_USERNAME}"
     
     keyboard_inline = [
-        [InlineKeyboardButton("🎮 গেম খেলুন (Mini App)", web_app={"url": web_app_url})],
-        [InlineKeyboardButton("👨‍💻 লাইভ সাপোর্ট (Live Support)", url=support_url)]
+        [InlineKeyboardButton("🎮 গেম খেলুন (Mini App)", web_app={"url": web_app_url})]
     ]
     
     current_balance = round(user_data.get("balance", 150.0), 2)
@@ -635,8 +632,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = [
         ["👤 প্রোফাইল", "💰 ব্যালেন্স"],
         ["📥 জমা", "📤 উত্তোলন"],
-        ["🔗 রেফার লিংক", "🎁 ডেইলি টাস্ক"],
-        ["🆘 লাইভ সাপোর্ট"]
+        ["🔗 রেফার লিংক", "🎁 ডেইলি টাস্ক"]
     ]
     
     await update.message.reply_text(
@@ -644,7 +640,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         reply_markup=ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
     )
     await update.message.reply_text(
-        "👇 নিচে গেম খেলে আয় করতে অথবা সাপোর্টে কথা বলতে বাটন সিলেক্ট করুন:", 
+        "👇 নিচে গেম খেলে আয় করতে বাটন সিলেক্ট করুন:", 
         reply_markup=reply_markup_inline
     )
 
@@ -738,7 +734,6 @@ async def total_users_command(update: Update, context: ContextTypes.DEFAULT_TYPE
     except Exception as e:
         await update.message.reply_text(f"❌ সমস্যা: {str(e)}")
 
-# ব্লক ইউজার ক্লিনআপসহ আপডেট করা ইউজারলিস্ট কমান্ড
 async def userlist_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     if user.id != ADMIN_ID: return
@@ -756,7 +751,6 @@ async def userlist_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         for u in all_users:
             target_user_id = u.get('user_id')
             try:
-                # ইউজারের স্ট্যাটাস চেক করার জন্য টাইপিং অ্যাকশন পাঠানো
                 await context.bot.send_chat_action(chat_id=target_user_id, action="typing")
                 valid_users.append(u)
             except Exception as e:
@@ -784,7 +778,6 @@ async def userlist_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except Exception as e:
         await update.message.reply_text(f"❌ সমস্যা: {str(e)}")
 
-# ব্রডকাস্ট এবং ব্লক ইউজার ক্লিনআপ কমান্ড
 async def broadcast_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     if user.id != ADMIN_ID:
@@ -828,7 +821,6 @@ async def broadcast_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except Exception as e:
         await update.message.reply_text(f"❌ সমস্যা হয়েছে: {str(e)}")
 
-# অ্যাডমিন কমান্ড: সবার ব্যালেন্সে একসাথে ৩০০ টাকা যোগ করার জন্য
 async def add_bonus_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     if user.id != ADMIN_ID:
@@ -919,8 +911,6 @@ async def handle_request(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "last_task_date": now.isoformat(), "task_cycle_start": cycle_start.isoformat() if isinstance(cycle_start, datetime) else cycle_start
         })
         await update.message.reply_text(f"🎁 ডেইলি টাস্ক সম্পন্ন! বোনাস: **{reward} টাকা** (দিন {streak}/7)")
-    elif "সাপোর্ট" in text or "Support" in text:
-        await update.message.reply_text(f"🆘 লাইভ সাপোর্ট: 👨‍💻 @{SUPPORT_USERNAME}")
 
 async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
