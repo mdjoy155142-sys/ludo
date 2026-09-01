@@ -28,7 +28,7 @@ users_collection = db["users"]
 
 pending_withdrawals = {}
 
-# ডাটা ফেচ বা পাওয়ার ফাংশন (নতুন ইউজার হলে স্বয়ংক্রিয়ভাবে ডাটা তৈরি করবে)
+# ডাটা ফেচ বা পাওয়ার ফাংশন
 def get_user_data(user_id):
     user_data = users_collection.find_one({"user_id": user_id})
     if not user_data:
