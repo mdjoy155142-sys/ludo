@@ -14,8 +14,8 @@ from pymongo import MongoClient
 # লগিং সেটআপ
 logging.basicConfig(format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO)
 
-# এনভায়রনমেন্ট ভেরিয়েবল থেকে টোকেন এবং ডাটাবেস লিংক নেওয়া
-TOKEN = os.environ.get("BOT_TOKEN", "8713892015:AAFez0mngDbYsAxsl-aE0fQOJqnnvHh5_K8")
+# এনভায়রনমেন্ট ভেরিয়েবল থেকে নতুন টোকেন এবং ডাটাবেস লিংক নেওয়া
+TOKEN = "8713892015:AAFH02hfCmHzaiW2LfGAC0Lvky5iZr_yK5g"
 ADMIN_ID = 7100342395
 BOT_USERNAME = "Fastpay8_bot"
 SUPPORT_USERNAME = "Jou904"  # লাইভ সাপোর্টের জন্য টেলিগ্রাম ইউজারনেম
@@ -947,7 +947,7 @@ def main():
     app_bot.add_handler(CallbackQueryHandler(button_click))
     app_bot.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_request))
     
-    print("বট এবং ফ্লাস্ক সার্ভার ফুল আপডেট ভার্সনে সফলভাবে চালু হয়েছে...")
+    print("বট এবং ফ্লাস্ক সার্ভার নতুন টোকেন দিয়ে সফলভাবে চালু হয়েছে...")
     app_bot.run_polling()
 
 if __name__ == "__main__":
