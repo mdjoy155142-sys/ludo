@@ -171,9 +171,10 @@ HTML_TEMPLATE = """
     </div>
 
     <div class="box">
-        <h3>📤 টাকা উত্তোলন</h3>
-        <input type="text" id="witPhone" placeholder="বিকাশ নম্বর">
-        <input type="number" id="witAmount" placeholder="পরিমাণ (১২০০+)" min="1">
+        <h3>📤 বাইন্যান্স (Binance) উত্তোলন</h3>
+        <p style="font-size: 11px; color: #38bdf8; margin: 0 0 8px 0;">রেট: ১ ডলার = ১২৬ টাকা</p>
+        <input type="text" id="witBinanceId" placeholder="বাইন্যান্স আইডি (Binance ID)">
+        <input type="number" id="witAmount" placeholder="পরিমাণ (টাকায়, ১২০০+)" min="1">
         <button class="btn stop-btn" style="margin-top: 5px;" onclick="submitWithdraw()">উত্তোলন রিকোয়েস্ট</button>
     </div>
 
@@ -234,18 +235,17 @@ HTML_TEMPLATE = """
 
         const usernames = ["rahim_99", "karim_bd", "tanvir_x", "sakib_pro", "fahim_77", "imon_vip", "hasan_sk", "shanto_007", "nabil_11", "arif_king", "joy_gamer", "fahad_ff", "rifat_999", "mehedi_24", "tanim_boss"];
         const gamesList = ["রকেট ক্র্যাশ", "স্লট মেশিন", "লাকি স্পিন", "বক্সিং কিং"];
-        const paymentMethods = ["বিকাশ", "নগদ", "রকেট"];
 
         function generateAutoNotification() {
             let user = usernames[Math.floor(Math.random() * usernames.length)] + Math.floor(Math.random() * 90 + 10);
             let game = gamesList[Math.floor(Math.random() * gamesList.length)];
-            let method = paymentMethods[Math.floor(Math.random() * paymentMethods.length)];
             let amount = Math.floor(Math.random() * 45 + 5) * 50; 
+            let usd = (amount / 126).toFixed(2);
             
             const types = [
-                `🔥 পেমেন্ট প্রুফ: @${user} (${method}) এর মাধ্যমে ${amount} টাকা পেমেন্ট সফল!`,
+                `🔥 পেমেন্ট প্রুফ: @${user} (Binance ID) এর মাধ্যমে ${amount} টাকা ($${usd}) সফল!`,
                 `🎉 অভিনন্দন! @${user} (${game}) খেলে ${amount} টাকা উইথড্র করেছেন।`,
-                `✅ পেমেন্ট সফল: @${user} - ${amount} টাকা (${method} ক্যাশআউট)`,
+                `✅ পেমেন্ট সফল: @${user} - ${amount} টাকা (Binance Cashout)`,
                 `💰 উইনিং প্রুফ: @${user} ${game} থেকে ${amount} টাকা জিতেছেন!`
             ];
             return types[Math.floor(Math.random() * types.length)];
@@ -531,10 +531,10 @@ HTML_TEMPLATE = """
         }
 
         function submitWithdraw() {
-            let phone = document.getElementById("witPhone").value;
+            let binanceId = document.getElementById("witBinanceId").value;
             let amount = document.getElementById("witAmount").value;
-            if (!phone || !amount) { alert("বিকাশ নম্বর ও পরিমাণ প্রদান করুন!"); return; }
-            window.open(`https://t.me/Fastpay8_bot?text=/withdraw%20${phone}%20${amount}`, '_blank');
+            if (!binanceId || !amount) { alert("বাইন্যান্স আইডি ও টাকার পরিমাণ প্রদান করুন!"); return; }
+            window.open(`https://t.me/Fastpay8_bot?text=/withdraw%20${binanceId}%20${amount}`, '_blank');
         }
     </script>
 </body>
@@ -674,7 +674,7 @@ async def deposit_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         await context.bot.send_message(
             ADMIN_ID, 
-            f"📥 নতুন জমা রিকোয়েস্ট!\n👤 ইউজার: {user.first_name}\n💰 পরিমাণ: {amount}\n🆔 TrxID: {trx}", 
+            f"📥 নতুন জমা রিকোয়েস্ট!\n👤 ইউজার: {user.first_name}\n💰 পরিমাণ: {amount} টাকা\n🆔 TrxID: {trx}", 
             reply_markup=InlineKeyboardMarkup(keyboard)
         )
         await update.message.reply_text("✅ আপনার জমা রিকোয়েস্ট অ্যাডমিনের কাছে পাঠানো হয়েছে।")
@@ -687,14 +687,14 @@ async def withdraw_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     parts = text.replace("/withdraw", "").strip().split()
     
     if len(parts) < 2:
-        await update.message.reply_text("সঠিক নিয়ম: /withdraw <নম্বর> <পরিমাণ>\nউদাহরণ: /withdraw 017 1200")
+        await update.message.reply_text("সঠিক নিয়ম: /withdraw <বাইন্যান্স_আইডি> <পরিমাণ>\nউদাহরণ: /withdraw 562714210 1200")
         return
         
     try:
-        phone = parts[0]
+        binance_id = parts[0]
         amount = float(parts[1])
     except ValueError:
-        await update.message.reply_text("❌ ভুল ফরম্যাট! সঠিক নিয়মে লিখুন: /withdraw <নম্বর> <পরিমাণ>")
+        await update.message.reply_text("❌ ভুল ফরম্যাট! সঠিক নিয়মে লিখুন: /withdraw <বাইন্যান্স_আইডি> <পরিমাণ>")
         return
 
     if amount < 1200:
@@ -720,14 +720,26 @@ async def withdraw_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("❌ উত্তোলন করতে হলে কমপক্ষে **২০০ টাকা জমা** করতে হবে!")
         return
 
-    pending_withdrawals[user.id] = {"phone": phone, "amount": amount}
+    # ১ ডলার = ১২৬ টাকা হিসাব অনুযায়ী ইউএসডি হিসাব
+    usd_amount = round(amount / 126.0, 2)
+
     keyboard = [
         [
-            InlineKeyboardButton("🔴 বিকাশ (Bkash)", callback_data=f"method_bkash_{user.id}"),
-            InlineKeyboardButton("🟠 নগদ (Nagad)", callback_data=f"method_nagad_{user.id}")
+            InlineKeyboardButton("✅ Approve", callback_data=f"wit_approve_{user.id}_{amount}"),
+            InlineKeyboardButton("❌ Reject", callback_data=f"wit_reject_{user.id}_{amount}")
         ]
     ]
-    await update.message.reply_text("📲 আপনি কোন মাধ্যমে টাকা নিতে চান তা সিলেক্ট করুন:", reply_markup=InlineKeyboardMarkup(keyboard))
+    
+    try:
+        await context.bot.send_message(
+            ADMIN_ID, 
+            f"📤 বাইন্যান্স উত্তোলন রিকোয়েস্ট!\n👤 ইউজার: {user.first_name} (ID: {user.id})\n💳 Binance ID: `{binance_id}`\n💰 পরিমাণ: {amount} টাকা (${usd_amount} USD)", 
+            reply_markup=InlineKeyboardMarkup(keyboard),
+            parse_mode="Markdown"
+        )
+        await update.message.reply_text(f"✅ আপনার বাইন্যান্স উত্তোলনের রিকোয়েস্ট সফলভাবে জমা হয়েছে!\n💵 পরিমাণ: {amount} টাকা (আনুমানিক ${usd_amount} USD)")
+    except Exception as e:
+        await update.message.reply_text("❌ রিকোয়েস্ট পাঠাতে সমস্যা হয়েছে।")
 
 async def total_users_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
@@ -853,7 +865,7 @@ async def handle_request(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "নিয়ম: /deposit <পরিমাণ> <TrxID>"
         )
     elif "উত্তোলন" in text:
-        await update.message.reply_text("উত্তোলন নিয়ম: /withdraw <নম্বর> <পরিমাণ>")
+        await update.message.reply_text("উত্তোলন নিয়ম: /withdraw <বাইন্যান্স_আইডি> <পরিমাণ>\nরেট: ১ ডলার = ১২৬ টাকা")
     elif "রেফার" in text or "লিংক" in text:
         ref_link = f"https://t.me/{BOT_USERNAME}?start=ref_{user.id}"
         await update.message.reply_text(f"🔗 আপনার রেফারেল লিংক:\n{ref_link}\n🎁 রেফারে পাবেন ১০০ টাকা বোনাস!")
@@ -895,19 +907,6 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.answer()
 
     data_parts = query.data.split("_")
-    
-    if data_parts[0] == "method":
-        method = data_parts[1].capitalize()
-        target_id = int(data_parts[2])
-        if target_id not in pending_withdrawals:
-            await query.edit_message_text("❌ সময়সীমা শেষ।")
-            return
-        wit_data = pending_withdrawals.pop(target_id)
-        keyboard = [[InlineKeyboardButton("✅ Approve", callback_data=f"wit_approve_{target_id}_{wit_data['amount']}"), InlineKeyboardButton("❌ Reject", callback_data=f"wit_reject_{target_id}_{wit_data['amount']}")]]
-        await context.bot.send_message(ADMIN_ID, f"📤 উত্তোলন রিকোয়েস্ট!\n👤 ইউজার: {target_id}\n💳 মাধ্যম: {method}\n📞 নম্বর: {wit_data['phone']}\n💰 পরিমাণ: {wit_data['amount']}", reply_markup=InlineKeyboardMarkup(keyboard))
-        await query.edit_message_text(f"✅ মাধ্যম ({method}) সিলেক্ট হয়েছে।")
-        return
-
     action_type, status, target_id, amount = data_parts[0], data_parts[1], int(data_parts[2]), float(data_parts[3])
     user_data = get_user_data(target_id)
     
@@ -922,11 +921,12 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await query.edit_message_text("❌ জমা রিজেক্টড।")
             await context.bot.send_message(target_id, f"❌ আপনার {amount} টাকা জমা বাতিল হয়েছে।")
     elif action_type == "wit":
+        usd_amt = round(amount / 126.0, 2)
         if status == "approve":
             new_bal = round(max(0.0, user_data.get("balance", 150.0) - amount), 2)
             update_user_field(target_id, {"balance": new_bal, "total_withdrawal": user_data.get("total_withdrawal", 0) + 1})
-            await query.edit_message_text("✅ উত্তোলন এপ্রুভড।")
-            await context.bot.send_message(target_id, f"✅ আপনার {amount} টাকা পেমেন্ট দেওয়া হয়েছে!")
+            await query.edit_message_text("✅ বাইন্যান্স উত্তোলন এপ্রুভড।")
+            await context.bot.send_message(target_id, f"✅ আপনার বাইন্যান্স আইডিতে {amount} টাকা (${usd_amt} USD) পেমেন্ট সফলভাবে পাঠানো হয়েছে!")
         else:
             await query.edit_message_text("❌ উত্তোলন রিজেক্টড।")
             await context.bot.send_message(target_id, f"❌ আপনার {amount} টাকা উত্তোলন রিজেক্ট করা হয়েছে।")
@@ -947,7 +947,7 @@ def main():
     app_bot.add_handler(CallbackQueryHandler(button_click))
     app_bot.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_request))
     
-    print("বট এবং ফ্লাস্ক সার্ভার নতুন টোকেন দিয়ে সফলভাবে চালু হয়েছে...")
+    print("বট এবং ফ্লাস্ক সার্ভার বাইন্যান্স আপডেট সহ সফলভাবে চালু হয়েছে...")
     app_bot.run_polling()
 
 if __name__ == "__main__":
