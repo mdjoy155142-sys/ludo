@@ -3,6 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <title>প্রো আর্নিং গেম জোন - প্রিমিয়াম এডিশন</title>
+    
+    <!-- আপনার Monetag ভেরিফিকেশন মেটা ট্যাগ -->
+    <meta name="monetag" content="3f925b759b7430dbc88461bd24bb4967">
+    
+    <!-- আপনার Monetag ব্যানার অ্যাড স্ক্রিপ্ট (এখানে আপনার জোন আইডি বসানো আছে, প্রয়োজনে চেক করে নিতে পারেন) -->
+    <script src="https://alwingulla.com/88/tag.min.js" data-zone="YOUR_ZONE_ID" async data-cfasync="false"></script>
+
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         body { background: #0b0f19; color: white; text-align: center; font-family: sans-serif; padding: 10px; margin: 0; }
@@ -55,7 +62,7 @@
         <button class="btn" id="rocketBtn" onclick="toggleRocketGame()">বেট নিশ্চিত করুন</button>
     </div>
 
-    <!-- ২. স্লট মেশিন (৩x৩ ঘর) - আগের মতো -->
+    <!-- ২. স্লট মেশিন (৩x৩ ঘর) -->
     <div id="slotsGame" class="game-section box">
         <button class="back-btn" onclick="closeGame()">⬅ ব্যাক</button>
         <h3 style="margin:0;">🎰 স্লট মেশিন (৩×৩ ঘর)</h3>
@@ -77,7 +84,7 @@
         <button class="btn" id="slotsBtn" onclick="playSlotsGame()">স্লট ঘোড়ান</button>
     </div>
 
-    <!-- ৩. বক্সিং কিং স্লট - আগের মতো -->
+    <!-- ৩. বক্সিং কিং স্লট -->
     <div id="boxingGame" class="game-section box">
         <button class="back-btn" onclick="closeGame()">⬅ ব্যাক</button>
         <h3 style="margin:0; color: #f59e0b;">🥊 বক্সিং কিং স্লট</h3>
@@ -89,7 +96,7 @@
         <button class="btn" onclick="playBoxingGame()" style="background: #ef4444; color: #fff;">🥊 বক্সিং স্পিন করুন</button>
     </div>
 
-    <!-- ৪. লাকি স্পিন হুইল - আগের মতো -->
+    <!-- ৪. লাকি স্পিন হুইল -->
     <div id="spinGame" class="game-section box">
         <button class="back-btn" onclick="closeGame()">⬅ ব্যাক</button>
         <h3 style="margin:0; color: #38bdf8;">🎡 লাকি স্পিন হুইল</h3>
@@ -195,12 +202,11 @@
             if (!isRocketRunning) return;
             rocketState = "FLYING";
 
-            // ৭৫% উইন চান্স লজিক
             let isWinChance = Math.random() < 0.75;
             if (isWinChance) {
-                crashAt = parseFloat((Math.random() * 4 + 2).toFixed(2)); // ২x থেকে ৬x (উইনিং)
+                crashAt = parseFloat((Math.random() * 4 + 2).toFixed(2)); 
             } else {
-                crashAt = parseFloat((Math.random() * 0.3 + 1.01).toFixed(2)); // দ্রুত ক্র্যাশ (লস)
+                crashAt = parseFloat((Math.random() * 0.3 + 1.01).toFixed(2)); 
             }
 
             if (hasRocketBet) {
@@ -295,7 +301,7 @@
             }
         }
 
-        // --- ২. স্লট মেশিন (আগের মতো) ---
+        // --- ২. স্লট মেশিন ---
         const slotsCanvas = document.getElementById('slotsCanvas');
         const slotCtx = slotsCanvas.getContext('2d');
 
@@ -362,7 +368,7 @@
             }, 70);
         }
 
-        // --- ৩. বক্সিং কিং স্লট (আগের মতো) ---
+        // --- ৩. বক্সিং কিং স্লট ---
         const boxingCanvas = document.getElementById('boxingCanvas');
         const bCtx = boxingCanvas.getContext('2d');
         function drawBoxing(symbols, text) {
@@ -399,7 +405,7 @@
             }, 70);
         }
 
-        // --- ৪. লাকি স্পিন হুইল (আগের মতো) ---
+        // --- ৪. লাকি স্পিন হুইল ---
         const wheelCanvas = document.getElementById('realWheelCanvas');
         const wCtx = wheelCanvas.getContext('2d');
         const slices = [
@@ -474,4 +480,4 @@
         }
     </script>
 </body>
-</html>
+            </html>
