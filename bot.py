@@ -651,18 +651,18 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def deposit_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     text = update.message.text
-    parts = text.replace("/deposit", "").strip().split()
+    parts = text.replace("/deposit", "").strip().split(maxsplit=1)
     
     if len(parts) < 2:
-        await update.message.reply_text("সঠিক নিয়ম: /deposit <পরিমাণ> <TrxID>\nউদাহরণ: /deposit 200 ABC123XYZ")
+        await update.message.reply_text("সঠিক নিয়ম: /deposit <পরিমাণ> <বাইনান্স আইডি>\nউদাহরণ: /deposit 1200 বাইনানচ আইডি")
         return
         
-    amount_str, trx = parts[0], parts[1]
+    amount_str, binance_id = parts[0], parts[1]
     try:
         amount = float(amount_str)
         if amount <= 0: raise ValueError()
     except ValueError:
-        await update.message.reply_text("❌ জমার পরিমাণ সঠিক সংখ্যা হতে হবে। উদাহরণ: /deposit 200 TrxID")
+        await update.message.reply_text("❌ জমার পরিমাণ সঠিক সংখ্যা হতে হবে। উদাহরণ: /deposit 1200 বাইনানচ আইডি")
         return
 
     keyboard = [
@@ -674,7 +674,7 @@ async def deposit_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         await context.bot.send_message(
             ADMIN_ID, 
-            f"📥 নতুন জমা রিকোয়েস্ট!\n👤 ইউজার: {user.first_name}\n💰 পরিমাণ: {amount} টাকা\n🆔 TrxID: {trx}", 
+            f"📥 নতুন বাইন্যান্স জমা রিকোয়েস্ট!\n👤 ইউজার: {user.first_name}\n💰 পরিমাণ: {amount} টাকা\n🆔 বাইনান্স আইডি: {binance_id}", 
             reply_markup=InlineKeyboardMarkup(keyboard)
         )
         await update.message.reply_text("✅ আপনার জমা রিকোয়েস্ট অ্যাডমিনের কাছে পাঠানো হয়েছে।")
@@ -859,10 +859,13 @@ async def handle_request(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(f"💰 বর্তমান ব্যালেন্স: {bal} টাকা")
     elif "জমা" in text:
         await update.message.reply_text(
-            "📥 টাকা জমা করুন:\n\n"
-            "বিকাশ মার্চেন্ট নম্বর: `01919130118`\n"
-            "*(টাকা পাঠানোর সময় পেমেন্ট অপশন ব্যবহার করুন)*\n\n"
-            "নিয়ম: /deposit <পরিমাণ> <TrxID>"
+            "📥 বাইন্যান্সের মাধ্যমে টাকা জমা করুন:\n\n"
+            "আমাদের অফিশিয়াল বাইন্যান্স আইডি (Binance ID):\n"
+            "📌 `562714210`\n\n"
+            "💵 রেট: ১ ডলার = ১২৬ টাকা\n\n"
+            "*(বাইন্যান্স পে বা ট্রান্সফারের মাধ্যমে পেমেন্ট সম্পন্ন করে বাইন্যান্স আইডি সংগ্রহ করুন)*\n\n"
+            "নিয়ম: /deposit <পরিমাণ> <বাইনান্স আইডি>\n"
+            "উদাহরণ: /deposit 1200 বাইনানচ আইডি"
         )
     elif "উত্তোলন" in text:
         await update.message.reply_text("উত্তোলন নিয়ম: /withdraw <বাইন্যান্স_আইডি> <পরিমাণ>\nরেট: ১ ডলার = ১২৬ টাকা")
