@@ -1,4 +1,4 @@
-import logging
+Import logging
 import json
 import os
 import threading
@@ -20,9 +20,6 @@ ADMIN_ID = 7100342395
 BOT_USERNAME = "Fastpay8_bot"
 SUPPORT_USERNAME = "Jou904"  # লাইভ সাপোর্টের জন্য টেলিগ্রাম ইউজারনেম
 
-# ১ ডলার সমান ১২৬ টাকা রেট কনস্ট্যান্ট
-EXCHANGE_RATE = 126.0
-
 # MongoDB কানেকশন সেটআপ
 MONGO_URI = os.environ.get("MONGO_URI", "mongodb+srv://admin:Bashar904@cluster0.nkm8mxx.mongodb.net/?appName=Cluster0")
 client = MongoClient(MONGO_URI)
@@ -31,6 +28,7 @@ users_collection = db["users"]
 
 pending_withdrawals = {}
 
+# ডাটা ফেচ বা পাওয়ার ফাংশন
 def get_user_data(user_id):
     user_data = users_collection.find_one({"user_id": user_id})
     if not user_data:
@@ -43,8 +41,7 @@ def get_user_data(user_id):
             "total_withdrawal": 0,
             "last_task_date": None,
             "task_streak": 0,
-            "task_cycle_start": None,
-            "bonus_claimed": False
+            "task_cycle_start": None
         }
         users_collection.insert_one(user_data)
     return user_data
@@ -84,6 +81,7 @@ HTML_TEMPLATE = """
         .history-bar { display: flex; gap: 5px; justify-content: center; overflow-x: auto; margin-bottom: 8px; padding: 4px; }
         .history-tag { background: #334155; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; color: #38bdf8; }
 
+        /* লাইভ নোটিফিকেশন বার স্টাইল */
         .notification-bar {
             background: linear-gradient(90deg, #1e293b, #334155);
             border-left: 4px solid #22c55e;
@@ -101,10 +99,10 @@ HTML_TEMPLATE = """
         }
         .noti-icon { font-size: 15px; }
         .noti-text { color: #38bdf8; font-weight: bold; transition: opacity 0.3s ease-in-out; }
-        .rate-notice { font-size: 12px; color: #38bdf8; margin-top: 5px; }
     </style>
 </head>
 <body>
+    <!-- লাইভ নোটিফিকেশন বার -->
     <div class="notification-bar">
         <span class="noti-icon">🔔</span>
         <div class="noti-text" id="notiText">পেমেন্ট প্রুফ লোড হচ্ছে...</div>
@@ -112,9 +110,9 @@ HTML_TEMPLATE = """
 
     <div class="box">
         <h4>💰 মূল ব্যালেন্স: <span id="balanceText">0.00</span> টাকা</h4>
-        <div class="rate-notice">💱 এক্সচেঞ্জ রেট: ১ ডলার = ১২৬ টাকা</div>
     </div>
 
+    <!-- গেম লবি -->
     <div id="gameLobby" class="game-section active-section box">
         <h3>🎮 প্রো গেম জোন</h3>
         <div class="game-grid" id="gameGrid">
@@ -125,6 +123,7 @@ HTML_TEMPLATE = """
         </div>
     </div>
 
+    <!-- ১. রকেট ক্র্যাশ -->
     <div id="rocketGame" class="game-section box">
         <button class="back-btn" onclick="closeGame()">⬅ ব্যাক</button>
         <h3 style="margin:0;">🚀 রকেট ক্র্যাশ</h3>
@@ -136,6 +135,7 @@ HTML_TEMPLATE = """
         <button class="btn" id="rocketBtn" onclick="toggleRocketGame()">বেট নিশ্চিত করুন</button>
     </div>
 
+    <!-- ২. স্লট মেশিন -->
     <div id="slotsGame" class="game-section box">
         <button class="back-btn" onclick="closeGame()">⬅ ব্যাক</button>
         <h3 style="margin:0;">🎰 স্লট মেশিন (৩×৩ ঘর)</h3>
@@ -154,6 +154,7 @@ HTML_TEMPLATE = """
         <button class="btn" id="slotsBtn" onclick="playSlotsGame()">স্লট ঘোড়ান</button>
     </div>
 
+    <!-- ৩. বক্সিং কিং স্লট -->
     <div id="boxingGame" class="game-section box">
         <button class="back-btn" onclick="closeGame()">⬅ ব্যাক</button>
         <h3 style="margin:0; color: #f59e0b;">🥊 বক্সিং কিং স্লট</h3>
@@ -165,6 +166,7 @@ HTML_TEMPLATE = """
         <button class="btn" onclick="playBoxingGame()" style="background: #ef4444; color: #fff;">🥊 বক্সিং স্পিন করুন</button>
     </div>
 
+    <!-- ৪. লাকি স্পিন হুইল -->
     <div id="spinGame" class="game-section box">
         <button class="back-btn" onclick="closeGame()">⬅ ব্যাক</button>
         <h3 style="margin:0; color: #38bdf8;">🎡 লাকি স্পিন হুইল</h3>
@@ -174,10 +176,11 @@ HTML_TEMPLATE = """
         <button class="btn" id="spinBtn" onclick="playRealWheel()">চাকা ঘোরান</button>
     </div>
 
+    <!-- টাকা উত্তোলন -->
     <div class="box">
-        <h3>📤 টাকা উত্তোলন (বাইনান্স পে)</h3>
-        <input type="text" id="witPayId" placeholder="বাইনান্স পে আইডি (Binance Pay ID)">
-        <input type="number" id="witAmount" placeholder="পরিমাণ (১২০০+ টাকা)" min="1">
+        <h3>📤 টাকা উত্তোলন</h3>
+        <input type="text" id="witPhone" placeholder="বিকাশ নম্বর">
+        <input type="number" id="witAmount" placeholder="পরিমাণ (১২০০+)" min="1">
         <button class="btn stop-btn" style="margin-top: 5px;" onclick="submitWithdraw()">উত্তোলন রিকোয়েস্ট</button>
     </div>
 
@@ -236,9 +239,10 @@ HTML_TEMPLATE = """
             document.getElementById('gameLobby').classList.add('active-section');
         }
 
+        // --- অটো ইউজারনেম নোটিফিকেশন সিস্টেম ---
         const usernames = ["rahim_99", "karim_bd", "tanvir_x", "sakib_pro", "fahim_77", "imon_vip", "hasan_sk", "shanto_007", "nabil_11", "arif_king", "joy_gamer", "fahad_ff", "rifat_999", "mehedi_24", "tanim_boss"];
         const gamesList = ["রকেট ক্র্যাশ", "স্লট মেশিন", "লাকি স্পিন", "বক্সিং কিং"];
-        const paymentMethods = ["বাইনান্স পে"];
+        const paymentMethods = ["বিকাশ", "নগদ", "রকেট"];
 
         function generateAutoNotification() {
             let user = usernames[Math.floor(Math.random() * usernames.length)] + Math.floor(Math.random() * 90 + 10);
@@ -267,6 +271,7 @@ HTML_TEMPLATE = """
         }
         setInterval(updateNotifications, 4000);
 
+        // --- রকেট গেম ---
         const rocketCanvas = document.getElementById('rocketCanvas');
         const rctx = rocketCanvas.getContext('2d');
         let rocketState = "WAITING", multiplier = 1.00, crashAt = 1.00, rocketBetVal = 0, hasRocketBet = false, isRocketRunning = false, rx = 20, ry = 150;
@@ -385,6 +390,7 @@ HTML_TEMPLATE = """
             }
         }
 
+        // --- স্লট মেশিন ---
         const slotsCanvas = document.getElementById('slotsCanvas');
         const slotCtx = slotsCanvas.getContext('2d');
 
@@ -438,6 +444,7 @@ HTML_TEMPLATE = """
             }, 70);
         }
 
+        // --- বক্সিং কিং স্লট ---
         const boxingCanvas = document.getElementById('boxingCanvas');
         const bCtx = boxingCanvas.getContext('2d');
         function drawBoxing(symbols, text) {
@@ -474,6 +481,7 @@ HTML_TEMPLATE = """
             }, 70);
         }
 
+        // --- লাকি স্পিন হুইল ---
         const wheelCanvas = document.getElementById('realWheelCanvas');
         const wCtx = wheelCanvas.getContext('2d');
         const slices = [
@@ -535,13 +543,10 @@ HTML_TEMPLATE = """
         }
 
         function submitWithdraw() {
-            let payId = document.getElementById("witPayId").value.trim();
-            let amount = document.getElementById("witAmount").value.trim();
-            if (!payId || !amount) { 
-                alert("দয়া করে আপনার বাইনান্স পে আইডি ও উত্তোলনের পরিমাণ প্রদান করুন!"); 
-                return; 
-            }
-            window.open(`https://t.me/Fastpay8_bot?text=/withdraw%20${payId}%20${amount}`, '_blank');
+            let phone = document.getElementById("witPhone").value;
+            let amount = document.getElementById("witAmount").value;
+            if (!phone || !amount) { alert("বিকাশ নম্বর ও পরিমাণ প্রদান করুন!"); return; }
+            window.open(`https://t.me/Fastpay8_bot?text=/withdraw%20${phone}%20${amount}`, '_blank');
         }
     </script>
 </body>
@@ -555,7 +560,7 @@ def index():
 @app.route('/get_balance/<int:user_id>')
 def get_balance(user_id):
     user_data = get_user_data(user_id)
-    return jsonify({"status": "success", "balance": round(user_data.get("balance", 150.0), 2)})
+    return jsonify({"status": "success", "balance": user_data.get("balance", 150.0)})
 
 @app.route('/update_balance', methods=['POST'])
 def update_balance():
@@ -566,7 +571,7 @@ def update_balance():
         
         user_data = get_user_data(user_id)
         current_balance = user_data.get("balance", 150.0)
-        new_balance = round(current_balance + amount_diff, 2)
+        new_balance = current_balance + amount_diff
         
         if new_balance < 0:
             new_balance = 0.0
@@ -599,8 +604,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "total_withdrawal": 0,
             "last_task_date": None,
             "task_streak": 0,
-            "task_cycle_start": None,
-            "bonus_claimed": False
+            "task_cycle_start": None
         }
         users_collection.insert_one(user_data)
         is_new_user = True
@@ -615,7 +619,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     referrals_list = ref_user.get("referrals", [])
                     if user_id not in referrals_list:
                         referrals_list.append(user_id)
-                        new_ref_balance = round(ref_user.get("balance", 0.0) + 100.0, 2)
+                        new_ref_balance = ref_user.get("balance", 0.0) + 100.0
                         update_user_field(referrer_id, {
                             "referrals": referrals_list,
                             "balance": new_ref_balance
@@ -635,8 +639,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         [InlineKeyboardButton("🎮 গেম খেলুন (Mini App)", web_app={"url": web_app_url})],
         [InlineKeyboardButton("👨‍💻 লাইভ সাপোর্ট (Live Support)", url=support_url)]
     ]
-    
-    current_balance = round(user_data.get("balance", 150.0), 2)
     reply_markup_inline = InlineKeyboardMarkup(keyboard_inline)
     
     keyboard = [
@@ -647,7 +649,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     ]
     
     await update.message.reply_text(
-        f"স্বাগতম, {user.first_name}! আপনার বর্তমান ব্যালেন্স {current_balance} টাকা। অপশন বেছে নিন:", 
+        f"স্বাগতম, {user.first_name}! ওয়েলকাম বোনাস হিসেবে আপনি পেয়েছেন ১৫০ টাকা। অপশন বেছে নিন:", 
         reply_markup=ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
     )
     await update.message.reply_text(
@@ -655,39 +657,36 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         reply_markup=reply_markup_inline
     )
 
-async def binance_deposit_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def deposit_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     text = update.message.text
-    parts = text.replace("/binancedeposit", "").strip().split()
+    parts = text.replace("/deposit", "").strip().split()
     
     if len(parts) < 2:
-        await update.message.reply_text(f"সঠিক নিয়ম: /binancedeposit <ইউএসডিটি_পরিমাণ> <Binance_Pay_ID>\nউদাহরণ: /binancedeposit 10 562714210\n💱 রেট: ১ ডলার = {EXCHANGE_RATE} টাকা")
+        await update.message.reply_text("সঠিক নিয়ম: /deposit <পরিমাণ> <TrxID>\nউদাহরণ: /deposit 200 ABC123XYZ")
         return
         
-    amount_str, binance_pay_id = parts[0], parts[1]
+    amount_str, trx = parts[0], parts[1]
     try:
-        usd_amount = float(amount_str)
-        if usd_amount <= 0: raise ValueError()
+        amount = float(amount_str)
+        if amount <= 0: raise ValueError()
     except ValueError:
-        await update.message.reply_text("❌ জমার পরিমাণ সঠিক সংখ্যা হতে হবে। উদাহরণ: /binancedeposit 10 562714210")
+        await update.message.reply_text("❌ জমার পরিমাণ সঠিক সংখ্যা হতে হবে। উদাহরণ: /deposit 200 TrxID")
         return
-
-    bdt_amount = round(usd_amount * EXCHANGE_RATE, 2)
 
     keyboard = [
         [
-            InlineKeyboardButton("✅ Approve", callback_data=f"dep_approve_{user.id}_{bdt_amount}"),
-            InlineKeyboardButton("❌ Reject", callback_data=f"dep_reject_{user.id}_{bdt_amount}")
+            InlineKeyboardButton("✅ Approve", callback_data=f"dep_approve_{user.id}_{amount}"),
+            InlineKeyboardButton("❌ Reject", callback_data=f"dep_reject_{user.id}_{amount}")
         ]
     ]
     try:
         await context.bot.send_message(
             ADMIN_ID, 
-            f"📥 নতুন বাইনান্স পে জমা রিকোয়েস্ট!\n👤 ইউজার: {user.first_name} (ID: {user.id})\n💵 ইউএসডিটি: ${usd_amount}\n💰 বিডিটি পরিমাণ: {bdt_amount} টাকা\n🆔 Binance Pay ID: `{binance_pay_id}`\n💱 রেট: ১$ = {EXCHANGE_RATE}৳", 
-            reply_markup=InlineKeyboardMarkup(keyboard),
-            parse_mode="Markdown"
+            f"📥 নতুন জমা রিকোয়েস্ট!\n👤 ইউজার: {user.first_name}\n💰 পরিমাণ: {amount}\n🆔 TrxID: {trx}", 
+            reply_markup=InlineKeyboardMarkup(keyboard)
         )
-        await update.message.reply_text("✅ আপনার বাইনান্স পে জমা রিকোয়েস্ট অ্যাডমিনের কাছে পাঠানো হয়েছে।")
+        await update.message.reply_text("✅ আপনার জমা রিকোয়েস্ট অ্যাডমিনের কাছে পাঠানো হয়েছে।")
     except Exception as e:
         await update.message.reply_text("❌ দুঃখিত, রিকোয়েস্ট পাঠাতে সমস্যা হয়েছে।")
 
@@ -697,14 +696,14 @@ async def withdraw_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     parts = text.replace("/withdraw", "").strip().split()
     
     if len(parts) < 2:
-        await update.message.reply_text(f"সঠিক নিয়ম: /withdraw <বাইনান্স পে আইডি> <পরিমাণ (টাকায়)>\nউদাহরণ: /withdraw 562714210 1200\n💱 রেট: ১ ডলার = {EXCHANGE_RATE} টাকা")
+        await update.message.reply_text("সঠিক নিয়ম: /withdraw <নম্বর> <পরিমাণ>\nউদাহরণ: /withdraw 017 1200")
         return
         
     try:
-        pay_id = parts[0]
+        phone = parts[0]
         amount = float(parts[1])
     except ValueError:
-        await update.message.reply_text("❌ ভুল ফরম্যাট! সঠিক নিয়মে লিখুন: /withdraw <বাইনান্স পে আইডি> <পরিমাণ>")
+        await update.message.reply_text("❌ ভুল ফরম্যাট! সঠিক নিয়মে লিখুন: /withdraw <নম্বর> <পরিমাণ>")
         return
 
     if amount < 1200:
@@ -726,17 +725,18 @@ async def withdraw_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     total_dep = user_data.get("total_deposit", 0.0)
-    if total_dep < 200:
-        await update.message.reply_text("❌ উত্তোলন করতে হলে কমপক্ষে **২০০ টাকা জমা** করতে হবে!")
+    if total_dep < 500:
+        await update.message.reply_text("❌ উত্তোলন করতে হলে কমপক্ষে **৫০০ টাকা জমা** করতে হবে!")
         return
 
-    pending_withdrawals[user.id] = {"pay_id": pay_id, "amount": amount}
+    pending_withdrawals[user.id] = {"phone": phone, "amount": amount}
     keyboard = [
         [
-            InlineKeyboardButton("🟡 বাইনান্স পে (Binance Pay)", callback_data=f"method_binance_{user.id}")
+            InlineKeyboardButton("🔴 বিকাশ (Bkash)", callback_data=f"method_bkash_{user.id}"),
+            InlineKeyboardButton("🟠 নগদ (Nagad)", callback_data=f"method_nagad_{user.id}")
         ]
     ]
-    await update.message.reply_text("📲 পেমেন্ট মাধ্যম সিলেক্ট করুন:", reply_markup=InlineKeyboardMarkup(keyboard))
+    await update.message.reply_text("📲 আপনি কোন মাধ্যমে টাকা নিতে চান তা সিলেক্ট করুন:", reply_markup=InlineKeyboardMarkup(keyboard))
 
 async def total_users_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
@@ -756,31 +756,9 @@ async def userlist_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await update.message.reply_text("❌ কোনো ইউজার পাওয়া যায়নি।")
             return
             
-        await update.message.reply_text("⏳ ইউজার লিস্ট চেক করা হচ্ছে এবং ব্লক ইউজারদের ক্লিন করা হচ্ছে...")
-        
-        valid_users = []
-        deleted_count = 0
-
-        for u in all_users:
-            target_user_id = u.get('user_id')
-            try:
-                await context.bot.send_chat_action(chat_id=target_user_id, action="typing")
-                valid_users.append(u)
-            except Exception as e:
-                error_str = str(e).lower()
-                if "blocked" in error_str or "forbidden" in error_str or "chat not found" in error_str:
-                    users_collection.delete_one({"user_id": target_user_id})
-                    deleted_count += 1
-                else:
-                    valid_users.append(u)
-
-        if not valid_users:
-            await update.message.reply_text(f"❌ কোনো সক্রিয় ইউজার নেই। {deleted_count}টি ব্লক করা ইউজার ডিলিট করা হয়েছে।")
-            return
-
-        await update.message.reply_text(f"📋 **সক্রিয় ইউজারের তথ্য (মোট: {len(valid_users)} জন, ডিলিট হয়েছে: {deleted_count} জন):**")
+        await update.message.reply_text(f"📋 **সকল ইউজারের তথ্য (মোট: {len(all_users)} জন):**")
         chunk_text = ""
-        for idx, u in enumerate(valid_users, 1):
+        for idx, u in enumerate(all_users, 1):
             line = f"{idx}. আইডি: `{u.get('user_id')}`\n   💰 ব্যালেন্স: {round(u.get('balance', 0.0), 2)}৳ | জমা: {round(u.get('total_deposit', 0.0), 2)}৳ | রেফার: {len(u.get('referrals', []))}\n\n"
             if len(chunk_text) + len(line) > 3500:
                 await update.message.reply_text(chunk_text, parse_mode="Markdown")
@@ -791,119 +769,23 @@ async def userlist_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except Exception as e:
         await update.message.reply_text(f"❌ সমস্যা: {str(e)}")
 
-async def broadcast_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user = update.effective_user
-    if user.id != ADMIN_ID:
-        return
-
-    message_text = update.message.text.replace("/broadcast", "").strip()
-    if not message_text:
-        await update.message.reply_text("❌ সঠিক নিয়মে লিখুন:\n`/broadcast আপনার নোটিফিকেশন মেসেজ`", parse_mode="Markdown")
-        return
-
-    try:
-        all_users = list(users_collection.find({}, {"user_id": 1}))
-        success_count = 0
-        fail_count = 0
-        deleted_count = 0
-
-        await update.message.reply_text("⏳ সবার কাছে নোটিফিকেশন পাঠানো এবং ব্লক ইউজারদের ক্লিন করা শুরু হয়েছে...")
-
-        for u in all_users:
-            target_user_id = u.get("user_id")
-            try:
-                await context.bot.send_message(
-                    chat_id=target_user_id,
-                    text=f"📢 **অফিসিয়াল নোটিফিকেশন**\n\n{message_text}",
-                    parse_mode="Markdown"
-                )
-                success_count += 1
-            except Exception as e:
-                fail_count += 1
-                error_str = str(e).lower()
-                if "blocked" in error_str or "forbidden" in error_str or "chat not found" in error_str:
-                    users_collection.delete_one({"user_id": target_user_id})
-                    deleted_count += 1
-
-        await update.message.reply_text(
-            f"✅ **ব্রডকাস্ট ও ক্লিনআপ সম্পন্ন!**\n\n"
-            f"📤 সফলভাবে পাঠানো হয়েছে: {success_count} জন\n"
-            f"❌ ব্যর্থ হয়েছে: {fail_count} জন\n"
-            f"🗑️ ব্লক করা ইউজার ডিলিট করা হয়েছে: {deleted_count} জন"
-        )
-    except Exception as e:
-        await update.message.reply_text(f"❌ সমস্যা হয়েছে: {str(e)}")
-
-async def add_custom_bonus_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user = update.effective_user
-    if user.id != ADMIN_ID:
-        return
-
-    if not context.args:
-        await update.message.reply_text("❌ সঠিক নিয়মে লিখুন:\n`/addcustombonus <টাকার পরিমাণ>`\nউদাহরণ: `/addcustombonus 150`", parse_mode="Markdown")
-        return
-
-    try:
-        bonus_amount = float(context.args[0])
-        if bonus_amount <= 0:
-            raise ValueError()
-    except ValueError:
-        await update.message.reply_text("❌ দয়া করে সঠিক সংখ্যা লিখুন। যেমন: `/addcustombonus 150`", parse_mode="Markdown")
-        return
-
-    try:
-        all_users = list(users_collection.find())
-        success_count = 0
-
-        await update.message.reply_text(f"⏳ সকল ইউজারের ব্যালেন্সে {bonus_amount} টাকা করে যোগ করা হচ্ছে...")
-
-        for u in all_users:
-            target_user_id = u.get("user_id")
-            current_bal = u.get("balance", 0.0)
-            new_bal = round(current_bal + bonus_amount, 2)
-            
-            users_collection.update_one({"user_id": target_user_id}, {"$set": {"balance": new_bal}})
-            success_count += 1
-
-            try:
-                await context.bot.send_message(
-                    chat_id=target_user_id,
-                    text=f"🎁 **স্পেশাল উপহার বা বোনাস!**\n\nঅফিসিয়াল ঘোষণা অনুযায়ী আপনার অ্যাকাউন্টে সফলভাবে **{bonus_amount} টাকা বোনাস** যোগ করা হয়েছে! 💰\n\nএখনই গেম খেলে ইনকাম করুন।",
-                    parse_mode="Markdown"
-                )
-            except Exception:
-                pass
-
-        await update.message.reply_text(f"✅ সফলভাবে মোট {success_count} জন ইউজারের ব্যালেন্সে {bonus_amount} টাকা করে যোগ করা হয়েছে!")
-    except Exception as e:
-        await update.message.reply_text(f"❌ সমস্যা হয়েছে: {str(e)}")
-
 async def handle_request(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not update.message or not update.message.text: return
     text = update.message.text.strip()
     user = update.effective_user
-    
     user_data = get_user_data(user.id)
     
     if "প্রোফাইল" in text:
         refs_count = len(user_data.get("referrals", []))
-        total_dep = round(user_data.get("total_deposit", 0.0), 2)
-        bal = round(user_data.get("balance", 150.0), 2)
-        profile_text = f"👤 প্রোফাইল\n🆔 আইডি: {user.id}\n💰 ব্যালেন্স: {bal} টাকা\n📥 মোট জমা: {total_dep} টাকা\n👥 মোট রেফার: {refs_count} জন\n💱 রেট: ১$ = {EXCHANGE_RATE}৳"
+        total_dep = user_data.get("total_deposit", 0.0)
+        profile_text = f"👤 প্রোফাইল\n🆔 আইডি: {user.id}\n💰 ব্যালেন্স: {round(user_data.get('balance', 150.0), 2)} টাকা\n📥 মোট জমা: {total_dep} টাকা\n👥 মোট রেফার: {refs_count} জন"
         await update.message.reply_text(profile_text)
     elif "ব্যালেন্স" in text:
-        bal = round(user_data.get("balance", 150.0), 2)
-        dollar_val = round(bal / EXCHANGE_RATE, 2)
-        await update.message.reply_text(f"💰 বর্তমান ব্যালেন্স: {bal} টাকা (প্রায় ${dollar_val} USD)\n💱 রেট: ১ ডলার = {EXCHANGE_RATE} টাকা")
+        await update.message.reply_text(f"💰 বর্তমান ব্যালেন্স: {round(user_data.get('balance', 150.0), 2)} টাকা")
     elif "জমা" in text:
-        await update.message.reply_text(
-            f"📥 বাইনান্স পে (Binance Pay) এর মাধ্যমে জমা করুন:\n\n"
-            f"🟡 বাইনান্স পে আইডি (Pay ID): `562714210`\n"
-            f"💱 এক্সচেঞ্জ রেট: ১ ডলার = {EXCHANGE_RATE} টাকা\n\n"
-            "নিয়ম: /binancedeposit <ইউএসডিটি_পরিমাণ> <Binance_Pay_ID>"
-        )
+        await update.message.reply_text("📥 টাকা জমা করুন:\nবিকাশ নম্বর: `01919130118`\nনিয়ম: /deposit <পরিমাণ> <TrxID>")
     elif "উত্তোলন" in text:
-        await update.message.reply_text(f"উত্তোলন নিয়ম: /withdraw <বাইনান্স পে আইডি> <পরিমাণ>\n💱 রেট: ১ ডলার = {EXCHANGE_RATE} টাকা")
+        await update.message.reply_text("উত্তোলন নিয়ম: /withdraw <নম্বর> <পরিমাণ>")
     elif "রেফার" in text or "লিংক" in text:
         ref_link = f"https://t.me/{BOT_USERNAME}?start=ref_{user.id}"
         await update.message.reply_text(f"🔗 আপনার রেফারেল লিংক:\n{ref_link}\n🎁 রেফারে পাবেন ১০০ টাকা বোনাস!")
@@ -930,7 +812,7 @@ async def handle_request(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if streak >= 7: streak, cycle_start = 0, now
         streak += 1
         reward = 30.0 if streak == 7 else 20.0
-        new_balance = round(user_data.get("balance", 150.0) + reward, 2)
+        new_balance = user_data.get("balance", 150.0) + reward
         
         update_user_field(user.id, {
             "balance": new_balance, "task_streak": streak,
@@ -943,24 +825,18 @@ async def handle_request(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
-
     data_parts = query.data.split("_")
     
     if data_parts[0] == "method":
-        method = "Binance Pay"
+        method = data_parts[1].capitalize()
         target_id = int(data_parts[2])
         if target_id not in pending_withdrawals:
             await query.edit_message_text("❌ সময়সীমা শেষ।")
             return
         wit_data = pending_withdrawals.pop(target_id)
         keyboard = [[InlineKeyboardButton("✅ Approve", callback_data=f"wit_approve_{target_id}_{wit_data['amount']}"), InlineKeyboardButton("❌ Reject", callback_data=f"wit_reject_{target_id}_{wit_data['amount']}")]]
-        await context.bot.send_message(
-            ADMIN_ID, 
-            f"📤 উত্তোলন রিকোয়েস্ট!\n👤 ইউজার আইডি: {target_id}\n💳 মাধ্যম: {method}\n🆔 বাইনান্স পে আইডি (Pay ID): `{wit_data['pay_id']}`\n💰 পরিমাণ: {wit_data['amount']} টাকা\n💱 রেট: ১$ = {EXCHANGE_RATE}৳", 
-            reply_markup=InlineKeyboardMarkup(keyboard),
-            parse_mode="Markdown"
-        )
-        await query.edit_message_text("✅ বাইনান্স পে মাধ্যম সিলেক্ট হয়েছে। অ্যাডমিন প্যানেলে রিকোয়েস্ট পাঠানো হয়েছে।")
+        await context.bot.send_message(ADMIN_ID, f"📤 উত্তোলন রিকোয়েস্ট!\n👤 ইউজার: {target_id}\n💳 মাধ্যম: {method}\n📞 নম্বর: {wit_data['phone']}\n💰 পরিমাণ: {wit_data['amount']}", reply_markup=InlineKeyboardMarkup(keyboard))
+        await query.edit_message_text(f"✅ মাধ্যম ({method}) সিলেক্ট হয়েছে।")
         return
 
     action_type, status, target_id, amount = data_parts[0], data_parts[1], int(data_parts[2]), float(data_parts[3])
@@ -968,20 +844,17 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     if action_type == "dep":
         if status == "approve":
-            new_bal = round(user_data.get("balance", 150.0) + amount, 2)
-            new_dep = round(user_data.get("total_deposit", 0.0) + amount, 2)
-            update_user_field(target_id, {"balance": new_bal, "total_deposit": new_dep})
-            await query.edit_message_text("✅ বাইনান্স পে জমা এপ্রুভড।")
-            await context.bot.send_message(target_id, f"🎉 আপনার {amount} টাকার বাইনান্স পে জমা সফল হয়েছে!")
+            update_user_field(target_id, {"balance": user_data.get("balance", 150.0) + amount, "total_deposit": user_data.get("total_deposit", 0.0) + amount})
+            await query.edit_message_text("✅ জমা এপ্রুভড।")
+            await context.bot.send_message(target_id, f"🎉 আপনার {amount} টাকা জমা সফল হয়েছে!")
         else:
             await query.edit_message_text("❌ জমা রিজেক্টড।")
-            await context.bot.send_message(target_id, f"❌ আপনার {amount} টাকার জমা বাতিল হয়েছে।")
+            await context.bot.send_message(target_id, f"❌ আপনার {amount} টাকা জমা বাতিল হয়েছে।")
     elif action_type == "wit":
         if status == "approve":
-            new_bal = round(max(0.0, user_data.get("balance", 150.0) - amount), 2)
-            update_user_field(target_id, {"balance": new_bal, "total_withdrawal": user_data.get("total_withdrawal", 0) + 1})
+            update_user_field(target_id, {"balance": max(0.0, user_data.get("balance", 150.0) - amount), "total_withdrawal": user_data.get("total_withdrawal", 0) + 1})
             await query.edit_message_text("✅ উত্তোলন এপ্রুভড।")
-            await context.bot.send_message(target_id, f"✅ আপনার {amount} টাকা বাইনান্স পে-তে পেমেন্ট দেওয়া হয়েছে!")
+            await context.bot.send_message(target_id, f"✅ আপনার {amount} টাকা পেমেন্ট দেওয়া হয়েছে!")
         else:
             await query.edit_message_text("❌ উত্তোলন রিজেক্টড।")
             await context.bot.send_message(target_id, f"❌ আপনার {amount} টাকা উত্তোলন রিজেক্ট করা হয়েছে।")
@@ -993,16 +866,14 @@ def main():
 
     app_bot = ApplicationBuilder().token(TOKEN).build()
     app_bot.add_handler(CommandHandler("start", start))
-    app_bot.add_handler(CommandHandler("binancedeposit", binance_deposit_command))
+    app_bot.add_handler(CommandHandler("deposit", deposit_command))
     app_bot.add_handler(CommandHandler("withdraw", withdraw_command))
     app_bot.add_handler(CommandHandler("totalusers", total_users_command))
     app_bot.add_handler(CommandHandler("userlist", userlist_command))
-    app_bot.add_handler(CommandHandler("broadcast", broadcast_command))
-    app_bot.add_handler(CommandHandler("addcustombonus", add_custom_bonus_command))
     app_bot.add_handler(CallbackQueryHandler(button_click))
     app_bot.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_request))
     
-    print(f"বট এবং ফ্লাস্ক সার্ভার সফলভাবে চালু হয়েছে... (এক্সচেঞ্জ রেট: ১ ডলার = {EXCHANGE_RATE} টাকা)")
+    print("বট এবং ফ্লাস্ক সার্ভার লাইভ নোটিফিকেশন বার সহ চালু হয়েছে...")
     app_bot.run_polling()
 
 if __name__ == "__main__":
