@@ -14,7 +14,7 @@ from pymongo import MongoClient
 # লগিং সেটআপ
 logging.basicConfig(format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO)
 
-# এনভায়রনমেন্ট ভেরিয়েবল থেকে নতুন টোকেন এবং ডাটাবেস লিংক নেওয়া
+# এনভায়রনমেন্ট ভেরিয়েবল বা কনফিগারেশন
 TOKEN = "8713892015:AAFH02hfCmHzaiW2LfGAC0Lvky5iZr_yK5g"
 ADMIN_ID = 7100342395
 BOT_USERNAME = "Fastpay8_bot"
@@ -25,8 +25,6 @@ MONGO_URI = os.environ.get("MONGO_URI", "mongodb+srv://admin:Bashar904@cluster0.
 client = MongoClient(MONGO_URI)
 db = client["telegram_bot_db"]
 users_collection = db["users"]
-
-pending_withdrawals = {}
 
 # ডাটা ফেচ বা পাওয়ার ফাংশন
 def get_user_data(user_id):
@@ -81,36 +79,14 @@ HTML_TEMPLATE = """
         
         .history-bar { display: flex; gap: 5px; justify-content: center; overflow-x: auto; margin-bottom: 8px; padding: 4px; }
         .history-tag { background: #334155; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; color: #38bdf8; }
-
-        .notification-bar {
-            background: linear-gradient(90deg, #1e293b, #334155);
-            border-left: 4px solid #22c55e;
-            padding: 8px 12px;
-            border-radius: 8px;
-            margin-bottom: 12px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 13px;
-            text-align: left;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-            overflow: hidden;
-            white-space: nowrap;
-        }
-        .noti-icon { font-size: 15px; }
-        .noti-text { color: #38bdf8; font-weight: bold; transition: opacity 0.3s ease-in-out; }
     </style>
 </head>
 <body>
-    <div class="notification-bar">
-        <span class="noti-icon">🔔</span>
-        <div class="noti-text" id="notiText">পেমেন্ট প্রুফ লোড হচ্ছে...</div>
-    </div>
-
     <div class="box">
         <h4>💰 মূল ব্যালেন্স: <span id="balanceText">0.00</span> টাকা</h4>
     </div>
 
+    <!-- গেম লবি -->
     <div id="gameLobby" class="game-section active-section box">
         <h3>🎮 প্রো গেম জোন</h3>
         <div class="game-grid" id="gameGrid">
@@ -121,6 +97,7 @@ HTML_TEMPLATE = """
         </div>
     </div>
 
+    <!-- ১. রকেট ক্র্যাশ -->
     <div id="rocketGame" class="game-section box">
         <button class="back-btn" onclick="closeGame()">⬅ ব্যাক</button>
         <h3 style="margin:0;">🚀 রকেট ক্র্যাশ</h3>
@@ -132,6 +109,7 @@ HTML_TEMPLATE = """
         <button class="btn" id="rocketBtn" onclick="toggleRocketGame()">বেট নিশ্চিত করুন</button>
     </div>
 
+    <!-- ২. স্লট মেশিন -->
     <div id="slotsGame" class="game-section box">
         <button class="back-btn" onclick="closeGame()">⬅ ব্যাক</button>
         <h3 style="margin:0;">🎰 স্লট মেশিন (৩×৩ ঘর)</h3>
@@ -150,6 +128,7 @@ HTML_TEMPLATE = """
         <button class="btn" id="slotsBtn" onclick="playSlotsGame()">স্লট ঘোড়ান</button>
     </div>
 
+    <!-- ৩. বক্সিং কিং স্লট -->
     <div id="boxingGame" class="game-section box">
         <button class="back-btn" onclick="closeGame()">⬅ ব্যাক</button>
         <h3 style="margin:0; color: #f59e0b;">🥊 বক্সিং কিং স্লট</h3>
@@ -161,6 +140,7 @@ HTML_TEMPLATE = """
         <button class="btn" onclick="playBoxingGame()" style="background: #ef4444; color: #fff;">🥊 বক্সিং স্পিন করুন</button>
     </div>
 
+    <!-- ৪. লাকি স্পিন হুইল -->
     <div id="spinGame" class="game-section box">
         <button class="back-btn" onclick="closeGame()">⬅ ব্যাক</button>
         <h3 style="margin:0; color: #38bdf8;">🎡 লাকি স্পিন হুইল</h3>
@@ -170,11 +150,16 @@ HTML_TEMPLATE = """
         <button class="btn" id="spinBtn" onclick="playRealWheel()">চাকা ঘোরান</button>
     </div>
 
+    <!-- টাকা উত্তোলন -->
     <div class="box">
-        <h3>📤 বাইন্যান্স (Binance) উত্তোলন</h3>
-        <p style="font-size: 11px; color: #38bdf8; margin: 0 0 8px 0;">রেট: ১ ডলার = ১২৬ টাকা</p>
-        <input type="text" id="witBinanceId" placeholder="বাইন্যান্স আইডি (Binance ID)">
-        <input type="number" id="witAmount" placeholder="পরিমাণ (টাকায়, ১২০০+)" min="1">
+        <h3>📤 টাকা উত্তোলন</h3>
+        <select id="witMethod" onchange="changeWithdrawPlaceholder()" style="width: 95%; padding: 10px; margin: 5px; border-radius: 5px; background: #0f172a; color: white; border: none; font-size: 14px;">
+            <option value="Bkash">বিকাশ (Bkash)</option>
+            <option value="Nagad">নগদ (Nagad)</option>
+            <option value="Binance">বাইন্যান্স (Binance ID/Email)</option>
+        </select>
+        <input type="text" id="witPhone" placeholder="বিকাশ নম্বর দিন (যেমন: 017xxxxxxxx)">
+        <input type="number" id="witAmount" placeholder="পরিমাণ (১২০০+)" min="1">
         <button class="btn stop-btn" style="margin-top: 5px;" onclick="submitWithdraw()">উত্তোলন রিকোয়েস্ট</button>
     </div>
 
@@ -233,36 +218,7 @@ HTML_TEMPLATE = """
             document.getElementById('gameLobby').classList.add('active-section');
         }
 
-        const usernames = ["rahim_99", "karim_bd", "tanvir_x", "sakib_pro", "fahim_77", "imon_vip", "hasan_sk", "shanto_007", "nabil_11", "arif_king", "joy_gamer", "fahad_ff", "rifat_999", "mehedi_24", "tanim_boss"];
-        const gamesList = ["রকেট ক্র্যাশ", "স্লট মেশিন", "লাকি স্পিন", "বক্সিং কিং"];
-
-        function generateAutoNotification() {
-            let user = usernames[Math.floor(Math.random() * usernames.length)] + Math.floor(Math.random() * 90 + 10);
-            let game = gamesList[Math.floor(Math.random() * gamesList.length)];
-            let amount = Math.floor(Math.random() * 45 + 5) * 50; 
-            let usd = (amount / 126).toFixed(2);
-            
-            const types = [
-                `🔥 পেমেন্ট প্রুফ: @${user} (Binance ID) এর মাধ্যমে ${amount} টাকা ($${usd}) সফল!`,
-                `🎉 অভিনন্দন! @${user} (${game}) খেলে ${amount} টাকা উইথড্র করেছেন।`,
-                `✅ পেমেন্ট সফল: @${user} - ${amount} টাকা (Binance Cashout)`,
-                `💰 উইনিং প্রুফ: @${user} ${game} থেকে ${amount} টাকা জিতেছেন!`
-            ];
-            return types[Math.floor(Math.random() * types.length)];
-        }
-
-        function updateNotifications() {
-            const notiElement = document.getElementById("notiText");
-            if (notiElement) {
-                notiElement.style.opacity = 0;
-                setTimeout(() => {
-                    notiElement.innerText = generateAutoNotification();
-                    notiElement.style.opacity = 1;
-                }, 300);
-            }
-        }
-        setInterval(updateNotifications, 4000);
-
+        // --- রকেট ক্র্যাশ লজিক ---
         const rocketCanvas = document.getElementById('rocketCanvas');
         const rctx = rocketCanvas.getContext('2d');
         let rocketState = "WAITING", multiplier = 1.00, crashAt = 1.00, rocketBetVal = 0, hasRocketBet = false, isRocketRunning = false, rx = 20, ry = 150;
@@ -288,11 +244,12 @@ HTML_TEMPLATE = """
         function launchRealRocket() {
             if (!isRocketRunning) return;
             rocketState = "FLYING";
-            let randomValue = Math.random();
-            if (randomValue < 0.15) crashAt = parseFloat((Math.random() * 15 + 5).toFixed(2));
-            else if (randomValue < 0.45) crashAt = parseFloat((Math.random() * 3 + 2).toFixed(2));
-            else if (randomValue < 0.85) crashAt = parseFloat((Math.random() * 0.7 + 1.3).toFixed(2));
-            else crashAt = parseFloat((Math.random() * 0.29 + 1.01).toFixed(2));
+            let isWinChance = Math.random() < 0.75;
+            if (isWinChance) {
+                crashAt = parseFloat((Math.random() * 4 + 2).toFixed(2)); 
+            } else {
+                crashAt = parseFloat((Math.random() * 0.3 + 1.01).toFixed(2)); 
+            }
 
             if (hasRocketBet) {
                 document.getElementById("rocketBtn").innerText = "💰 ক্যাশ আউট করুন";
@@ -381,6 +338,7 @@ HTML_TEMPLATE = """
             }
         }
 
+        // --- স্লট মেশিন লজিক ---
         const slotsCanvas = document.getElementById('slotsCanvas');
         const slotCtx = slotsCanvas.getContext('2d');
 
@@ -434,6 +392,7 @@ HTML_TEMPLATE = """
             }, 70);
         }
 
+        // --- বক্সিং গেম লজিক ---
         const boxingCanvas = document.getElementById('boxingCanvas');
         const bCtx = boxingCanvas.getContext('2d');
         function drawBoxing(symbols, text) {
@@ -470,6 +429,7 @@ HTML_TEMPLATE = """
             }, 70);
         }
 
+        // --- লাকি স্পিন হুইল লজিক ---
         const wheelCanvas = document.getElementById('realWheelCanvas');
         const wCtx = wheelCanvas.getContext('2d');
         const slices = [
@@ -530,11 +490,45 @@ HTML_TEMPLATE = """
             }, 30);
         }
 
+        // --- পেমেন্ট মেথড পরিবর্তনের প্লেসহোল্ডার লজিক ---
+        function changeWithdrawPlaceholder() {
+            let method = document.getElementById("witMethod").value;
+            let phoneInput = document.getElementById("witPhone");
+            if (method === "Bkash") {
+                phoneInput.placeholder = "বিকাশ নম্বর দিন (যেমন: 017xxxxxxxx)";
+            } else if (method === "Nagad") {
+                phoneInput.placeholder = "নগদ নম্বর দিন (যেমন: 018xxxxxxxx)";
+            } else if (method === "Binance") {
+                phoneInput.placeholder = "বাইন্যান্স পে আইডি বা ইমেইল দিন";
+            }
+        }
+
+        // --- আপডেট করা সঠিক সাবমিট উইথড্র ফাংশন ---
         function submitWithdraw() {
-            let binanceId = document.getElementById("witBinanceId").value;
-            let amount = document.getElementById("witAmount").value;
-            if (!binanceId || !amount) { alert("বাইন্যান্স আইডি ও টাকার পরিমাণ প্রদান করুন!"); return; }
-            window.open(`https://t.me/Fastpay8_bot?text=/withdraw%20${binanceId}%20${amount}`, '_blank');
+            let method = document.getElementById("witMethod").value;
+            let accountInfo = document.getElementById("witPhone").value.trim();
+            let amount = document.getElementById("witAmount").value.trim();
+            
+            if (!accountInfo || !amount) { 
+                alert("দয়া করে অ্যাকাউন্ট নম্বর/আইডি এবং টাকার পরিমাণ সঠিকভাবে প্রদান করুন!"); 
+                return; 
+            }
+            
+            let botUsername = "Fastpay8_bot"; 
+            let withdrawCommand = `/withdraw ${method} ${accountInfo} ${amount}`;
+            
+            if (window.Telegram && window.Telegram.WebApp) {
+                let tg = window.Telegram.WebApp;
+                let url = `https://t.me/${botUsername}?text=${encodeURIComponent(withdrawCommand)}`;
+                
+                if (tg.openTelegramLink) {
+                    tg.openTelegramLink(url);
+                } else {
+                    window.location.href = url;
+                }
+            } else {
+                window.location.href = `https://t.me/${botUsername}?text=${encodeURIComponent(withdrawCommand)}`;
+            }
         }
     </script>
 </body>
@@ -654,15 +648,15 @@ async def deposit_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     parts = text.replace("/deposit", "").strip().split(maxsplit=1)
     
     if len(parts) < 2:
-        await update.message.reply_text("সঠিক নিয়ম: /deposit <পরিমাণ> <বাইনান্স আইডি>\nউদাহরণ: /deposit 1200 বাইনানচ আইডি")
+        await update.message.reply_text("সঠিক নিয়ম: /deposit <পরিমাণ> <নম্বর>\nউদাহরণ: /deposit 1200 01700000000")
         return
         
-    amount_str, binance_id = parts[0], parts[1]
+    amount_str, phone_no = parts[0], parts[1]
     try:
         amount = float(amount_str)
         if amount <= 0: raise ValueError()
     except ValueError:
-        await update.message.reply_text("❌ জমার পরিমাণ সঠিক সংখ্যা হতে হবে। উদাহরণ: /deposit 1200 বাইনানচ আইডি")
+        await update.message.reply_text("❌ জমার পরিমাণ সঠিক সংখ্যা হতে হবে।")
         return
 
     keyboard = [
@@ -674,7 +668,7 @@ async def deposit_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         await context.bot.send_message(
             ADMIN_ID, 
-            f"📥 নতুন বাইন্যান্স জমা রিকোয়েস্ট!\n👤 ইউজার: {user.first_name}\n💰 পরিমাণ: {amount} টাকা\n🆔 বাইনান্স আইডি: {binance_id}", 
+            f"📥 নতুন জমা রিকোয়েস্ট!\n👤 ইউজার: {user.first_name}\n💰 পরিমাণ: {amount} টাকা\n📱 নম্বর: {phone_no}", 
             reply_markup=InlineKeyboardMarkup(keyboard)
         )
         await update.message.reply_text("✅ আপনার জমা রিকোয়েস্ট অ্যাডমিনের কাছে পাঠানো হয়েছে।")
@@ -686,15 +680,16 @@ async def withdraw_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = update.message.text
     parts = text.replace("/withdraw", "").strip().split()
     
-    if len(parts) < 2:
-        await update.message.reply_text("সঠিক নিয়ম: /withdraw <বাইন্যান্স_আইডি> <পরিমাণ>\nউদাহরণ: /withdraw 562714210 1200")
+    if len(parts) < 3:
+        await update.message.reply_text("সঠিক নিয়ম: /withdraw <মেথড> <নম্বর/আইডি> <পরিমাণ>\nউদাহরণ: /withdraw Bkash 01700000000 1200")
         return
         
     try:
-        binance_id = parts[0]
-        amount = float(parts[1])
+        method = parts[0]
+        account_info = parts[1]
+        amount = float(parts[2])
     except ValueError:
-        await update.message.reply_text("❌ ভুল ফরম্যাট! সঠিক নিয়মে লিখুন: /withdraw <বাইন্যান্স_আইডি> <পরিমাণ>")
+        await update.message.reply_text("❌ ভুল ফরম্যাট! সঠিক নিয়মে লিখুন।")
         return
 
     if amount < 1200:
@@ -720,9 +715,6 @@ async def withdraw_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("❌ উত্তোলন করতে হলে কমপক্ষে **২০০ টাকা জমা** করতে হবে!")
         return
 
-    # ১ ডলার = ১২৬ টাকা হিসাব অনুযায়ী ইউএসডি হিসাব
-    usd_amount = round(amount / 126.0, 2)
-
     keyboard = [
         [
             InlineKeyboardButton("✅ Approve", callback_data=f"wit_approve_{user.id}_{amount}"),
@@ -733,11 +725,11 @@ async def withdraw_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         await context.bot.send_message(
             ADMIN_ID, 
-            f"📤 বাইন্যান্স উত্তোলন রিকোয়েস্ট!\n👤 ইউজার: {user.first_name} (ID: {user.id})\n💳 Binance ID: `{binance_id}`\n💰 পরিমাণ: {amount} টাকা (${usd_amount} USD)", 
+            f"📤 উত্তোলন রিকোয়েস্ট!\n👤 ইউজার: {user.first_name} (ID: {user.id})\n💳 মাধ্যম: *{method}*\n📱 একাউন্ট/নম্বর: `{account_info}`\n💰 পরিমাণ: {amount} টাকা", 
             reply_markup=InlineKeyboardMarkup(keyboard),
             parse_mode="Markdown"
         )
-        await update.message.reply_text(f"✅ আপনার বাইন্যান্স উত্তোলনের রিকোয়েস্ট সফলভাবে জমা হয়েছে!\n💵 পরিমাণ: {amount} টাকা (আনুমানিক ${usd_amount} USD)")
+        await update.message.reply_text(f"✅ আপনার উত্তোলনের রিকোয়েস্ট সফলভাবে জমা হয়েছে!\n💵 মাধ্যম: {method}\n💵 পরিমাণ: {amount} টাকা")
     except Exception as e:
         await update.message.reply_text("❌ রিকোয়েস্ট পাঠাতে সমস্যা হয়েছে।")
 
@@ -774,8 +766,7 @@ async def userlist_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def broadcast_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
-    if user.id != ADMIN_ID:
-        return
+    if user.id != ADMIN_ID: return
 
     message_text = update.message.text.replace("/broadcast", "").strip()
     if not message_text:
@@ -801,18 +792,13 @@ async def broadcast_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
             except Exception:
                 fail_count += 1
 
-        await update.message.reply_text(
-            f"✅ **ব্রডকাস্ট সম্পন্ন!**\n\n"
-            f"📤 সফলভাবে পাঠানো হয়েছে: {success_count} জন\n"
-            f"❌ ব্যর্থ হয়েছে: {fail_count} জন"
-        )
+        await update.message.reply_text(f"✅ ব্রডকাস্ট সম্পন্ন!\n📤 সফল: {success_count} | ❌ ব্যর্থ: {fail_count}")
     except Exception as e:
         await update.message.reply_text(f"❌ সমস্যা হয়েছে: {str(e)}")
 
 async def add_bonus_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
-    if user.id != ADMIN_ID:
-        return
+    if user.id != ADMIN_ID: return
 
     try:
         all_users = list(users_collection.find())
@@ -831,13 +817,13 @@ async def add_bonus_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
             try:
                 await context.bot.send_message(
                     chat_id=target_user_id,
-                    text="🎁 **বিশাল উপহার বা বোনাস!**\n\nঅফিসিয়াল ঘোষণা অনুযায়ী আপনার অ্যাকাউন্টে সফলভাবে **৩০০ টাকা স্পেশাল বোনাস** যোগ করা হয়েছে! 💰\n\nএখনই গেম খেলে ইনকাম শুরু করুন।",
+                    text="🎁 **বিশাল উপহার বা বোনাস!**\n\nঅফিসিয়াল ঘোষণা অনুযায়ী আপনার অ্যাকাউন্টে সফলভাবে **৩০০ টাকা স্পেশাল বোনাস** যোগ করা হয়েছে! 💰",
                     parse_mode="Markdown"
                 )
             except Exception:
                 pass
 
-        await update.message.reply_text(f"✅ সফলভাবে মোট {success_count} জন ইউজারের ব্যালেন্সে ৩০০ টাকা করে যোগ করা হয়েছে!")
+        await update.message.reply_text(f"✅ সফলভাবে মোট {success_count} জন ইউজারের ব্যালেন্সে ৩০০ টাকা যোগ করা হয়েছে!")
     except Exception as e:
         await update.message.reply_text(f"❌ সমস্যা হয়েছে: {str(e)}")
 
@@ -858,17 +844,9 @@ async def handle_request(update: Update, context: ContextTypes.DEFAULT_TYPE):
         bal = round(user_data.get("balance", 150.0), 2)
         await update.message.reply_text(f"💰 বর্তমান ব্যালেন্স: {bal} টাকা")
     elif "জমা" in text:
-        await update.message.reply_text(
-            "📥 বাইন্যান্সের মাধ্যমে টাকা জমা করুন:\n\n"
-            "আমাদের অফিশিয়াল বাইন্যান্স আইডি (Binance ID):\n"
-            "📌 `562714210`\n\n"
-            "💵 রেট: ১ ডলার = ১২৬ টাকা\n\n"
-            "*(বাইন্যান্স পে বা ট্রান্সফারের মাধ্যমে পেমেন্ট সম্পন্ন করে বাইন্যান্স আইডি সংগ্রহ করুন)*\n\n"
-            "নিয়ম: /deposit <পরিমাণ> <বাইনান্স আইডি>\n"
-            "উদাহরণ: /deposit 1200 বাইনানচ আইডি"
-        )
+        await update.message.reply_text("📥 টাকা জমা করতে নিয়ম মেনে লিখুন:\n/deposit <পরিমাণ> <নম্বর>\nউদাহরণ: /deposit 1200 01700000000")
     elif "উত্তোলন" in text:
-        await update.message.reply_text("উত্তোলন নিয়ম: /withdraw <বাইন্যান্স_আইডি> <পরিমাণ>\nরেট: ১ ডলার = ১২৬ টাকা")
+        await update.message.reply_text("উত্তোলন নিয়ম: মিনি অ্যাপের 'টাকা উত্তোলন' সেকশন ব্যবহার করে সহজে রিকোয়েস্ট পাঠান। অথবা নিয়মে লিখুন:\n/withdraw <মেথড> <নম্বর> <পরিমাণ>\nউদাহরণ: /withdraw Bkash 01700000000 1200")
     elif "রেফার" in text or "লিংক" in text:
         ref_link = f"https://t.me/{BOT_USERNAME}?start=ref_{user.id}"
         await update.message.reply_text(f"🔗 আপনার রেফারেল লিংক:\n{ref_link}\n🎁 রেফারে পাবেন ১০০ টাকা বোনাস!")
@@ -924,12 +902,11 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await query.edit_message_text("❌ জমা রিজেক্টড।")
             await context.bot.send_message(target_id, f"❌ আপনার {amount} টাকা জমা বাতিল হয়েছে।")
     elif action_type == "wit":
-        usd_amt = round(amount / 126.0, 2)
         if status == "approve":
             new_bal = round(max(0.0, user_data.get("balance", 150.0) - amount), 2)
             update_user_field(target_id, {"balance": new_bal, "total_withdrawal": user_data.get("total_withdrawal", 0) + 1})
-            await query.edit_message_text("✅ বাইন্যান্স উত্তোলন এপ্রুভড।")
-            await context.bot.send_message(target_id, f"✅ আপনার বাইন্যান্স আইডিতে {amount} টাকা (${usd_amt} USD) পেমেন্ট সফলভাবে পাঠানো হয়েছে!")
+            await query.edit_message_text("✅ উত্তোলন এপ্রুভড।")
+            await context.bot.send_message(target_id, f"✅ আপনার অ্যাকাউন্টে {amount} টাকা পেমেন্ট সফলভাবে পাঠানো হয়েছে!")
         else:
             await query.edit_message_text("❌ উত্তোলন রিজেক্টড।")
             await context.bot.send_message(target_id, f"❌ আপনার {amount} টাকা উত্তোলন রিজেক্ট করা হয়েছে।")
@@ -950,7 +927,7 @@ def main():
     app_bot.add_handler(CallbackQueryHandler(button_click))
     app_bot.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_request))
     
-    print("বট এবং ফ্লাস্ক সার্ভার বাইন্যান্স আপডেট সহ সফলভাবে চালু হয়েছে...")
+    print("বট এবং ফ্লাস্ক সার্ভার সফলভাবে চালু হয়েছে...")
     app_bot.run_polling()
 
 if __name__ == "__main__":
