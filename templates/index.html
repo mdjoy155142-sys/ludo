@@ -96,6 +96,22 @@
         <button class="btn" id="spinBtn" onclick="playRealWheel()">চাকা ঘোরান</button>
     </div>
 
+    <!-- টাকা জমা সেকশন -->
+    <div class="box">
+        <h3>📥 টাকা জমা</h3>
+        <input type="number" id="depAmount" placeholder="পরিমাণ (টাকা)" min="1">
+        <input type="text" id="depBinanceId" placeholder="বাইনান্স আইডি (যেমন: 562714210)">
+        <button class="btn" style="background: #38bdf8; color: #0b0f19; margin-top: 5px;" onclick="submitDeposit()">জমা রিকোয়েস্ট পাঠান</button>
+    </div>
+
+    <!-- টাকা উত্তোলন সেকশন -->
+    <div class="box">
+        <h3>📤 টাকা উত্তোলন</h3>
+        <input type="number" id="witAmount" placeholder="পরিমাণ (মিনিমাম ১২০০)" min="1">
+        <input type="text" id="witBinanceId" placeholder="বাইনান্স আইডি (যেমন: 562714210)">
+        <button class="btn stop-btn" style="margin-top: 5px;" onclick="submitWithdraw()">উত্তোলন রিকোয়েস্ট পাঠান</button>
+    </div>
+
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
@@ -149,6 +165,70 @@
         function closeGame() {
             document.querySelectorAll('.game-section').forEach(s => s.classList.remove('active-section'));
             document.getElementById('gameLobby').classList.add('active-section');
+        }
+
+        // --- জমা এবং উত্তোলনের নতুন আপডেট ফাংশন ---
+        async function submitDeposit() {
+            let amount = document.getElementById("depAmount").value.trim();
+            let binanceId = document.getElementById("depBinanceId").value.trim();
+            
+            if (!amount || !binanceId) { 
+                alert("দয়া করে জমার পরিমাণ এবং বাইনান্স আইডি সঠিকভাবে লিখুন!"); 
+                return; 
+            }
+            
+            try {
+                let res = await fetch('/deposit_request_web', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: userId, amount: amount, binance_id: binanceId })
+                });
+                let data = await res.json();
+                if (data.status === "success") {
+                    alert("✅ আপনার জমা রিকোয়েস্ট সফলভাবে অ্যাডমিনের কাছে পাঠানো হয়েছে!");
+                    document.getElementById("depAmount").value = "";
+                    document.getElementById("depBinanceId").value = "";
+                } else {
+                    alert("❌ সমস্যা: " + data.message);
+                }
+            } catch (err) {
+                console.error(err);
+                alert("❌ সার্ভারে কানেক্ট করা যায়নি!");
+            }
+        }
+
+        async function submitWithdraw() {
+            let amount = document.getElementById("witAmount").value.trim();
+            let binanceId = document.getElementById("witBinanceId").value.trim();
+            
+            if (!amount || !binanceId) { 
+                alert("দয়া করে উত্তোলনের পরিমাণ এবং বাইনান্স আইডি সঠিকভাবে লিখুন!"); 
+                return; 
+            }
+            
+            if (parseFloat(amount) < 1200) {
+                alert("মিনিমাম উত্তোলন ১২০০ টাকা!");
+                return;
+            }
+            
+            try {
+                let res = await fetch('/withdraw_request_web', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: userId, amount: amount, binance_id: binanceId })
+                });
+                let data = await res.json();
+                if (data.status === "success") {
+                    alert("✅ আপনার উত্তোলনের রিকোয়েস্ট সফলভাবে জমা হয়েছে!");
+                    document.getElementById("witAmount").value = "";
+                    document.getElementById("witBinanceId").value = "";
+                } else {
+                    alert("❌ সমস্যা: " + data.message);
+                }
+            } catch (err) {
+                console.error(err);
+                alert("❌ সার্ভারে কানেক্ট করা যায়নি!");
+            }
         }
 
         // --- রকেট ক্র্যাশ লজিক ---
@@ -424,4 +504,4 @@
         }
     </script>
 </body>
-    </html>
+</html>
