@@ -1,4 +1,4 @@
-Import logging
+import logging
 import json
 import os
 import threading
@@ -93,13 +93,6 @@ HTML_TEMPLATE = """
             <div class="game-card" onclick="openGame('slotsGame')">🎰 স্লট মেশিন (৩×৩)</div>
             <div class="game-card" onclick="openGame('boxingGame')">🥊 বক্সিং কিং</div>
             <div class="game-card" onclick="openGame('spinGame')">🎡 লাকি স্পিন</div>
-        </div>
-
-        <!-- Monetag Banner Ad Section -->
-        <div class="box" style="margin-top: 15px; background: #0f172a; border: 1px solid #334155; padding: 10px; text-align: center;">
-            <p style="font-size: 11px; color: #64748b; margin: 0 0 5px 0;">Sponsored Advertisement</p>
-            <div id="container-a62c68f869854d9fb8a9d8213efc12ee" style="min-height: 50px; display: flex; justify-content: center; align-items: center;"></div>
-            <script async="async" data-cfasync="false" src="https://alwingulla.com/88/tag.min.js" data-zone="10093824"></script>
         </div>
     </div>
 
@@ -695,7 +688,7 @@ async def deposit_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
             reply_markup=InlineKeyboardMarkup(keyboard),
             parse_mode="Markdown"
         )
-        await update.message.reply_text(f"✅ আপনার জমা রিকোয়েস্ট অ্যাডমিনের কাছে পাঠানো হয়েছে।\n🆔 বাইনান্স আইডি: {binance_id}")
+        await update.message.reply_text(f"✅ আপনার জমা রিকোয়েস্ট অ্যাডমিনের কাছে পাঠানো হয়েছে。\n🆔 বাইনান্স আইডি: {binance_id}")
     except Exception as e:
         await update.message.reply_text("❌ দুঃখিত, রিকোয়েস্ট পাঠাতে সমস্যা হয়েছে।")
 
@@ -967,4 +960,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-এটাতে কিকি
