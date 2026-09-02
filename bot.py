@@ -95,12 +95,20 @@ HTML_TEMPLATE = """
             <div class="game-card" onclick="openGame('spinGame')">🎡 লাকি স্পিন</div>
         </div>
 
-        <!-- Monetag Banner Ad Section (ব্যানার এড কোড যুক্ত করা হয়েছে) -->
+        <!-- Monetag Banner Ad Section (আপডেট করা ও লোডিং নিশ্চিত করার ব্যবস্থা) -->
         <div class="box" style="margin-top: 15px; background: #0f172a; border: 1px solid #334155; padding: 8px;">
             <p style="font-size: 11px; color: #64748b; margin: 0 0 5px 0;">Sponsored Advertisement</p>
             <div id="banner-ad-container" style="min-height: 50px; display: flex; justify-content: center; align-items: center;">
-                <!-- আপনার Monetag থেকে প্রাপ্ত ব্যানার স্ক্রিপ্ট ট্যাগটি নিচে বসানো হয়েছে -->
-                <script src="https://alwingulla.com/88/tag.min.js" data-zone="10093824" async data-cfasync="false"></script>
+                <script>
+                    (function() {
+                        var script = document.createElement('script');
+                        script.src = "https://alwingulla.com/88/tag.min.js";
+                        script.setAttribute("data-zone", "10093824");
+                        script.async = true;
+                        script.setAttribute("data-cfasync", "false");
+                        document.getElementById("banner-ad-container").appendChild(script);
+                    })();
+                </script>
             </div>
         </div>
     </div>
