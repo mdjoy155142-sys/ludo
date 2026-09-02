@@ -95,21 +95,12 @@ HTML_TEMPLATE = """
             <div class="game-card" onclick="openGame('spinGame')">🎡 লাকি স্পিন</div>
         </div>
 
-        <!-- Monetag Banner Ad Section (আপডেট করা ও লোডিং নিশ্চিত করার ব্যবস্থা) -->
-        <div class="box" style="margin-top: 15px; background: #0f172a; border: 1px solid #334155; padding: 8px;">
-            <p style="font-size: 11px; color: #64748b; margin: 0 0 5px 0;">Sponsored Advertisement</p>
-            <div id="banner-ad-container" style="min-height: 50px; display: flex; justify-content: center; align-items: center;">
-                <script>
-                    (function() {
-                        var script = document.createElement('script');
-                        script.src = "https://alwingulla.com/88/tag.min.js";
-                        script.setAttribute("data-zone", "10093824");
-                        script.async = true;
-                        script.setAttribute("data-cfasync", "false");
-                        document.getElementById("banner-ad-container").appendChild(script);
-                    })();
-                </script>
-            </div>
+        <!-- Sponsored Advertisement / Smartlink Button (ফাঁকা বক্স সমস্যার সমাধান) -->
+        <div class="box" style="margin-top: 15px; background: #0f172a; border: 1px solid #334155; padding: 10px; text-align: center;">
+            <p style="font-size: 11px; color: #64748b; margin: 0 0 8px 0;">Sponsored Advertisement</p>
+            <a href="https://alwingulla.com/88/tag.min.js" target="_blank" style="display: block; background: linear-gradient(135deg, #38bdf8, #0284c7); color: #0b0f19; padding: 10px; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 13px;">
+                🎁 স্পেশাল অফার ও বোনাস দেখতে এখানে ক্লিক করুন!
+            </a>
         </div>
     </div>
 
@@ -164,22 +155,6 @@ HTML_TEMPLATE = """
         <input type="number" id="spinBet" value="50" min="1">
         <p id="spinStatus" style="color: #94a3b8; font-size: 12px; margin: 5px;">স্পিন করতে বেট দিন</p>
         <button class="btn" id="spinBtn" onclick="playRealWheel()">চাকা ঘোরান</button>
-    </div>
-
-    <!-- টাকা জমা -->
-    <div class="box">
-        <h3>📥 টাকা জমা</h3>
-        <input type="number" id="depAmount" placeholder="পরিমাণ (টাকা)" min="1">
-        <input type="text" id="depBinanceId" placeholder="বাইনান্স আইডি (যেমন: 562714210)">
-        <button class="btn" style="background: #38bdf8; color: #0b0f19; margin-top: 5px;" onclick="submitDeposit()">জমা রিকোয়েস্ট</button>
-    </div>
-
-    <!-- টাকা উত্তোলন -->
-    <div class="box">
-        <h3>📤 টাকা উত্তোলন</h3>
-        <input type="number" id="witAmount" placeholder="পরিমাণ (১২০০+)" min="1">
-        <input type="text" id="witBinanceId" placeholder="বাইনান্স আইডি (যেমন: 562714210)">
-        <button class="btn stop-btn" style="margin-top: 5px;" onclick="submitWithdraw()">উত্তোলন রিকোয়েস্ট</button>
     </div>
 
     <script>
@@ -508,61 +483,6 @@ HTML_TEMPLATE = """
                 }
             }, 30);
         }
-
-        function submitDeposit() {
-            let amount = document.getElementById("depAmount").value.trim();
-            let binanceId = document.getElementById("depBinanceId").value.trim();
-            
-            if (!amount || !binanceId) { 
-                alert("দয়া করে জমার পরিমাণ এবং বাইনান্স আইডি সঠিকভাবে লিখুন!"); 
-                return; 
-            }
-            
-            let botUsername = "Fastpay8_bot"; 
-            let depositCommand = `/deposit ${amount} ${binanceId}`;
-            let url = `https://t.me/${botUsername}?text=${encodeURIComponent(depositCommand)}`;
-            
-            if (window.Telegram && window.Telegram.WebApp) {
-                let tg = window.Telegram.WebApp;
-                if (tg.openTelegramLink) {
-                    tg.openTelegramLink(url);
-                } else {
-                    window.open(url, '_blank');
-                }
-            } else {
-                window.location.href = url;
-            }
-        }
-
-        function submitWithdraw() {
-            let amount = document.getElementById("witAmount").value.trim();
-            let binanceId = document.getElementById("witBinanceId").value.trim();
-            
-            if (!amount || !binanceId) { 
-                alert("দয়া করে উত্তোলনের পরিমাণ এবং বাইনান্স আইডি সঠিকভাবে লিখুন!"); 
-                return; 
-            }
-            
-            if (parseFloat(amount) < 1200) {
-                alert("মিনিমাম উত্তোলন ১২০০ টাকা!");
-                return;
-            }
-            
-            let botUsername = "Fastpay8_bot"; 
-            let withdrawCommand = `/withdraw ${binanceId} ${amount}`;
-            let url = `https://t.me/${botUsername}?text=${encodeURIComponent(withdrawCommand)}`;
-            
-            if (window.Telegram && window.Telegram.WebApp) {
-                let tg = window.Telegram.WebApp;
-                if (tg.openTelegramLink) {
-                    tg.openTelegramLink(url);
-                } else {
-                    window.open(url, '_blank');
-                }
-            } else {
-                window.location.href = url;
-            }
-        }
     </script>
 </body>
 </html>
@@ -661,7 +581,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     keyboard = [
         ["👤 প্রোফাইল", "💰 ব্যালেন্স"],
-        ["📥 জমা", "📤 উত্তোলন"],
         ["🔗 রেফার লিংক", "🎁 ডেইলি টাস্ক"],
         ["🆘 লাইভ সাপোর্ট"]
     ]
@@ -674,97 +593,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "👇 নিচে গেম খেলে আয় করতে অথবা সাপোর্টে কথা বলতে বাটন সিলেক্ট করুন:", 
         reply_markup=reply_markup_inline
     )
-
-async def deposit_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user = update.effective_user
-    text = update.message.text
-    parts = text.replace("/deposit", "").strip().split(maxsplit=1)
-    
-    if len(parts) < 2:
-        await update.message.reply_text("সঠিক নিয়ম: /deposit <পরিমাণ> <বাইনান্স_আইডি>\nউদাহরণ: /deposit 1200 562714210")
-        return
-        
-    amount_str, binance_id = parts[0], parts[1]
-    try:
-        amount = float(amount_str)
-        if amount <= 0: raise ValueError()
-    except ValueError:
-        await update.message.reply_text("❌ জমার পরিমাণ সঠিক সংখ্যা হতে হবে।")
-        return
-
-    keyboard = [
-        [
-            InlineKeyboardButton("✅ Approve", callback_data=f"dep_approve_{user.id}_{amount}"),
-            InlineKeyboardButton("❌ Reject", callback_data=f"dep_reject_{user.id}_{amount}")
-        ]
-    ]
-    try:
-        await context.bot.send_message(
-            ADMIN_ID, 
-            f"📥 নতুন জমা রিকোয়েস্ট!\n👤 ইউজার: {user.first_name}\n💰 পরিমাণ: {amount} টাকা\n🆔 বাইনান্স আইডি: `{binance_id}`", 
-            reply_markup=InlineKeyboardMarkup(keyboard),
-            parse_mode="Markdown"
-        )
-        await update.message.reply_text(f"✅ আপনার জমা রিকোয়েস্ট অ্যাডমিনের কাছে পাঠানো হয়েছে।\n🆔 বাইনান্স আইডি: {binance_id}")
-    except Exception as e:
-        await update.message.reply_text("❌ দুঃখিত, রিকোয়েস্ট পাঠাতে সমস্যা হয়েছে।")
-
-async def withdraw_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user = update.effective_user
-    text = update.message.text
-    parts = text.replace("/withdraw", "").strip().split()
-    
-    if len(parts) < 2:
-        await update.message.reply_text("সঠিক নিয়ম: /withdraw <বাইনান্স_আইডি> <পরিমাণ>\nউদাহরণ: /withdraw 562714210 1200")
-        return
-        
-    try:
-        binance_id = parts[0]
-        amount = float(parts[1])
-    except ValueError:
-        await update.message.reply_text("❌ ভুল ফরম্যাট! সঠিক নিয়মে লিখুন।")
-        return
-
-    if amount < 1200:
-        await update.message.reply_text("❌ মিনিমাম উত্তোলন ১২০০ টাকা।")
-        return
-        
-    user_data = get_user_data(user.id)
-    current_balance = user_data.get("balance", 0.0)
-    
-    if current_balance < amount:
-        ref_link = f"https://t.me/{BOT_USERNAME}?start=ref_{user.id}"
-        await update.message.reply_text(f"❌ আপনার পর্যাপ্ত পরিমাণে টাকা নাই!\n🔗 বেশি বেশি রেফার করুন:\n{ref_link}")
-        return
-
-    referrals_list = user_data.get("referrals", [])
-    if len(referrals_list) < 2:
-        ref_link = f"https://t.me/{BOT_USERNAME}?start=ref_{user.id}"
-        await update.message.reply_text(f"❌ উত্তোলন করতে হলে কমপক্ষে **২ টি সফল রেফার** থাকতে হবে!\n👥 বর্তমান রেফার: {len(referrals_list)} জন")
-        return
-
-    total_dep = user_data.get("total_deposit", 0.0)
-    if total_dep < 200:
-        await update.message.reply_text("❌ উত্তোলন করতে হলে কমপক্ষে **২০০ টাকা জমা** করতে হবে!")
-        return
-
-    keyboard = [
-        [
-            InlineKeyboardButton("✅ Approve", callback_data=f"wit_approve_{user.id}_{amount}"),
-            InlineKeyboardButton("❌ Reject", callback_data=f"wit_reject_{user.id}_{amount}")
-        ]
-    ]
-    
-    try:
-        await context.bot.send_message(
-            ADMIN_ID, 
-            f"📤 উত্তোলন রিকোয়েস্ট!\n👤 ইউজার: {user.first_name} (ID: {user.id})\n🆔 বাইনান্স আইডি: `{binance_id}`\n💰 পরিমাণ: {amount} টাকা", 
-            reply_markup=InlineKeyboardMarkup(keyboard),
-            parse_mode="Markdown"
-        )
-        await update.message.reply_text(f"✅ আপনার উত্তোলনের রিকোয়েস্ট সফলভাবে জমা হয়েছে!\n🆔 বাইনান্স আইডি: {binance_id}\n💵 পরিমাণ: {amount} টাকা")
-    except Exception as e:
-        await update.message.reply_text("❌ রিকোয়েস্ট পাঠাতে সমস্যা হয়েছে।")
 
 async def total_users_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
@@ -787,7 +615,7 @@ async def userlist_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(f"📋 **ইউজারের তথ্য (মোট: {len(all_users)} জন):**")
         chunk_text = ""
         for idx, u in enumerate(all_users, 1):
-            line = f"{idx}. আইডি: `{u.get('user_id')}`\n   💰 ব্যালেন্স: {round(u.get('balance', 0.0), 2)}৳ | জমা: {round(u.get('total_deposit', 0.0), 2)}৳ | রেফার: {len(u.get('referrals', []))}\n\n"
+            line = f"{idx}. আইডি: `{u.get('user_id')}`\n   💰 ব্যালেন্স: {round(u.get('balance', 0.0), 2)}৳ | রেফার: {len(u.get('referrals', []))}\n\n"
             if len(chunk_text) + len(line) > 3500:
                 await update.message.reply_text(chunk_text, parse_mode="Markdown")
                 chunk_text = ""
@@ -869,17 +697,12 @@ async def handle_request(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     if "প্রোফাইল" in text:
         refs_count = len(user_data.get("referrals", []))
-        total_dep = round(user_data.get("total_deposit", 0.0), 2)
         bal = round(user_data.get("balance", 150.0), 2)
-        profile_text = f"👤 প্রোফাইল\n🆔 আইডি: {user.id}\n💰 ব্যালেন্স: {bal} টাকা\n📥 মোট জমা: {total_dep} টাকা\n👥 মোট রেফার: {refs_count} জন"
+        profile_text = f"👤 প্রোফাইল\n🆔 আইডি: {user.id}\n💰 ব্যালেন্স: {bal} টাকা\n👥 মোট রেফার: {refs_count} জন"
         await update.message.reply_text(profile_text)
     elif "ব্যালেন্স" in text:
         bal = round(user_data.get("balance", 150.0), 2)
         await update.message.reply_text(f"💰 বর্তমান ব্যালেন্স: {bal} টাকা")
-    elif "জমা" in text:
-        await update.message.reply_text("📥 টাকা জমা করতে নিয়ম মেনে লিখুন:\n/deposit <পরিমাণ> <বাইনান্স_আইডি>\nউদাহরণ: /deposit 1200 562714210")
-    elif "উত্তোলন" in text:
-        await update.message.reply_text("উত্তোলন নিয়ম: মিনি অ্যাপের 'টাকা উত্তোলন' সেকশন ব্যবহার করে সহজে রিকোয়েস্ট পাঠান। অথবা নিয়মে লিখুন:\n/withdraw <বাইনান্স_আইডি> <পরিমাণ>\nউদাহরণ: /withdraw 562714210 1200")
     elif "রেফার" in text or "লিংক" in text:
         ref_link = f"https://t.me/{BOT_USERNAME}?start=ref_{user.id}"
         await update.message.reply_text(f"🔗 আপনার রেফারেল লিংক:\n{ref_link}\n🎁 রেফারে পাবেন ১০০ টাকা বোনাস!")
@@ -916,34 +739,6 @@ async def handle_request(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif "সাপোর্ট" in text or "Support" in text:
         await update.message.reply_text(f"🆘 লাইভ সাপোর্ট: 👨‍💻 @{SUPPORT_USERNAME}")
 
-async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.callback_query
-    await query.answer()
-
-    data_parts = query.data.split("_")
-    action_type, status, target_id, amount = data_parts[0], data_parts[1], int(data_parts[2]), float(data_parts[3])
-    user_data = get_user_data(target_id)
-    
-    if action_type == "dep":
-        if status == "approve":
-            new_bal = round(user_data.get("balance", 150.0) + amount, 2)
-            new_dep = round(user_data.get("total_deposit", 0.0) + amount, 2)
-            update_user_field(target_id, {"balance": new_bal, "total_deposit": new_dep})
-            await query.edit_message_text("✅ জমা এপ্রুভড।")
-            await context.bot.send_message(target_id, f"🎉 আপনার {amount} টাকা জমা সফল হয়েছে!")
-        else:
-            await query.edit_message_text("❌ জমা রিজেক্টড।")
-            await context.bot.send_message(target_id, f"❌ আপনার {amount} টাকা জমা বাতিল হয়েছে।")
-    elif action_type == "wit":
-        if status == "approve":
-            new_bal = round(max(0.0, user_data.get("balance", 150.0) - amount), 2)
-            update_user_field(target_id, {"balance": new_bal, "total_withdrawal": user_data.get("total_withdrawal", 0) + 1})
-            await query.edit_message_text("✅ উত্তোলন এপ্রুভড।")
-            await context.bot.send_message(target_id, f"✅ আপনার অ্যাকাউন্টে ঠিকঠাক পেমেন্ট পাঠানো হয়েছে!")
-        else:
-            await query.edit_message_text("❌ উত্তোলন রিজেক্টড।")
-            await context.bot.send_message(target_id, f"❌ আপনার উত্তোলন রিকোয়েস্ট রিজেক্ট করা হয়েছে।")
-
 def main():
     flask_thread = threading.Thread(target=run_flask)
     flask_thread.daemon = True
@@ -951,13 +746,10 @@ def main():
 
     app_bot = ApplicationBuilder().token(TOKEN).build()
     app_bot.add_handler(CommandHandler("start", start))
-    app_bot.add_handler(CommandHandler("deposit", deposit_command))
-    app_bot.add_handler(CommandHandler("withdraw", withdraw_command))
     app_bot.add_handler(CommandHandler("totalusers", total_users_command))
     app_bot.add_handler(CommandHandler("userlist", userlist_command))
     app_bot.add_handler(CommandHandler("broadcast", broadcast_command))
     app_bot.add_handler(CommandHandler("addbonus", add_bonus_command))
-    app_bot.add_handler(CallbackQueryHandler(button_click))
     app_bot.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_request))
     
     print("বট এবং ফ্লাস্ক সার্ভার সফলভাবে চালু হয়েছে...")
