@@ -26,7 +26,6 @@ client = MongoClient(MONGO_URI)
 db = client["telegram_bot_db"]
 users_collection = db["users"]
 
-# ডাটা ফেচ বা পাওয়ার ফাংশন
 def get_user_data(user_id):
     user_data = users_collection.find_one({"user_id": user_id})
     if not user_data:
@@ -48,7 +47,7 @@ def get_user_data(user_id):
 def update_user_field(user_id, update_data):
     users_collection.update_one({"user_id": user_id}, {"$set": update_data}, upsert=True)
 
-# --- ফ্লাস্ক (Flask) ওয়েব সার্ভার সেটআপ (মিনি অ্যাপের জন্য) ---
+# --- ফ্লাস্ক (Flask) ওয়েব সার্ভার সেটআপ ---
 app = Flask(__name__)
 
 HTML_TEMPLATE = """
@@ -96,14 +95,12 @@ HTML_TEMPLATE = """
             <div class="game-card" onclick="openGame('spinGame')">🎡 লাকি স্পিন</div>
         </div>
 
-        <!-- Monetag Banner Ad Section (বাটন ছাড়া সরাসরি ব্যানার এড) -->
+        <!-- Monetag Banner Ad Section (ব্যানার এড কোড যুক্ত করা হয়েছে) -->
         <div class="box" style="margin-top: 15px; background: #0f172a; border: 1px solid #334155; padding: 8px;">
             <p style="font-size: 11px; color: #64748b; margin: 0 0 5px 0;">Sponsored Advertisement</p>
-            <!-- এখানে আপনার Monetag ব্যানার এড-এর স্ক্রিপ্ট ট্যাগ বসাবেন -->
             <div id="banner-ad-container" style="min-height: 50px; display: flex; justify-content: center; align-items: center;">
-                <script type="text/javascript">
-                    // আপনার Monetag ব্যানার কোড বা জোন স্ক্রিপ্ট এখানে পেস্ট করতে পারেন
-                </script>
+                <!-- আপনার Monetag থেকে প্রাপ্ত ব্যানার স্ক্রিপ্ট ট্যাগটি নিচে বসানো হয়েছে -->
+                <script src="https://alwingulla.com/88/tag.min.js" data-zone="10093824" async data-cfasync="false"></script>
             </div>
         </div>
     </div>
@@ -434,7 +431,7 @@ HTML_TEMPLATE = """
                         let prize = bet * 3;
                         await updateBalanceInBackend(prize);
                         drawBoxing(['👑', '👑', '👑'], `🎉 নকআউট জয়! জিতেছেন ${prize.toFixed(2)} টাকা!`);
-                        status.innerText = `বিজয় লাভ করেছেন!`;
+                        status.innerText = `বিজয় লাভ করেছেন!`;
                     } else {
                         drawBoxing(['🥊', '🥋', '⭐'], "❌ হেরে গেছেন, আবার চেষ্টা করুন।");
                         status.innerText = `হেরে গেছেন!`;
@@ -504,7 +501,6 @@ HTML_TEMPLATE = """
             }, 30);
         }
 
-        // --- টাকা জমা সাবমিট ফাংশন (শুধু বাইনান্স আইডি) ---
         function submitDeposit() {
             let amount = document.getElementById("depAmount").value.trim();
             let binanceId = document.getElementById("depBinanceId").value.trim();
@@ -530,7 +526,6 @@ HTML_TEMPLATE = """
             }
         }
 
-        // --- টাকা উত্তোলনের সাবমিট ফাংশন (শুধু বাইনান্স আইডি) ---
         function submitWithdraw() {
             let amount = document.getElementById("witAmount").value.trim();
             let binanceId = document.getElementById("witBinanceId").value.trim();
@@ -936,10 +931,10 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
             new_bal = round(max(0.0, user_data.get("balance", 150.0) - amount), 2)
             update_user_field(target_id, {"balance": new_bal, "total_withdrawal": user_data.get("total_withdrawal", 0) + 1})
             await query.edit_message_text("✅ উত্তোলন এপ্রুভড।")
-            await context.bot.send_message(target_id, f"✅ আপনার অ্যাকাউন্টে {amount} টাকা পেমেন্ট সফলভাবে পাঠানো হয়েছে!")
+            await context.bot.send_message(target_id, f"✅ আপনার অ্যাকাউন্টে ঠিকঠাক পেমেন্ট পাঠানো হয়েছে!")
         else:
             await query.edit_message_text("❌ উত্তোলন রিজেক্টড।")
-            await context.bot.send_message(target_id, f"❌ আপনার {amount} টাকা উত্তোলন রিজেক্ট করা হয়েছে।")
+            await context.bot.send_message(target_id, f"❌ আপনার উত্তোলন রিকোয়েস্ট রিজেক্ট করা হয়েছে।")
 
 def main():
     flask_thread = threading.Thread(target=run_flask)
