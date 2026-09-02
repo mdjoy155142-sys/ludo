@@ -58,6 +58,7 @@ HTML_TEMPLATE = """
     <meta charset="UTF-8">
     <title>প্রো আর্নিং গেম জোন - প্রিমিয়াম এডিশন</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <!-- Monetag SDK Tag (এখানে আপনার Monetag এর জোন অনুযায়ী স্ক্রিপ্ট ট্যাগ বসাতে হবে) -->
     <style>
         body { background: #0b0f19; color: white; text-align: center; font-family: sans-serif; padding: 10px; margin: 0; }
         .box { background: #1e293b; padding: 12px; border-radius: 15px; margin-bottom: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
@@ -94,6 +95,13 @@ HTML_TEMPLATE = """
             <div class="game-card" onclick="openGame('slotsGame')">🎰 স্লট মেশিন (৩×৩)</div>
             <div class="game-card" onclick="openGame('boxingGame')">🥊 বক্সিং কিং</div>
             <div class="game-card" onclick="openGame('spinGame')">🎡 লাকি স্পিন</div>
+        </div>
+
+        <!-- Monetag Ad Section in Lobby -->
+        <div class="box" style="margin-top: 15px; background: linear-gradient(135deg, #0f172a, #1e293b); border: 1px solid #38bdf8;">
+            <h3 style="margin-top:0; color:#38bdf8;">📺 ফ্রি আর্নিং এড</h3>
+            <p style="font-size: 12px; color: #94a3b8; margin: 5px 0;">বিজ্ঞাপন দেখে ইনস্ট্যান্ট ব্যালেন্স বাড়ান!</p>
+            <button class="btn" style="background: #0284c7;" onclick="playMonetagAd()">বিজ্ঞাপন দেখুন ও আয় করুন</button>
         </div>
     </div>
 
@@ -219,6 +227,36 @@ HTML_TEMPLATE = """
         function closeGame() {
             document.querySelectorAll('.game-section').forEach(s => s.classList.remove('active-section'));
             document.getElementById('gameLobby').classList.add('active-section');
+        }
+
+        // --- Monetag Rewarded Ad Integration ---
+        async function playMonetagAd() {
+            let btn = event.target;
+            btn.disabled = true;
+            btn.innerText = "⏳ এড লোড হচ্ছে...";
+
+            try {
+                // আপনার Monetag জোন অনুযায়ী ফাংশন কল এখানে কাজ করবে (যেমন: show_10093824())
+                // যদি গ্লোবাল ফাংশন থাকে তা এখানে কল করতে হবে
+                if (typeof show_10093824 === 'function') {
+                    await show_10093824();
+                } else {
+                    // যদি এসডিকে ফাংশন সরাসরি না পাওয়া যায়, তবে সিম্যুলেশন বা সরাসরি রওয়ার্ডের জন্য
+                    await new Promise(resolve => setTimeout(resolve, 2000));
+                }
+                
+                let rewardAmount = 2.00; // বিজ্ঞাপন দেখার পর পুরস্কারের পরিমাণ
+                await updateBalanceInBackend(rewardAmount);
+                
+                btn.disabled = false;
+                btn.innerText = "বিজ্ঞাপন দেখুন ও আয় করুন";
+                alert(`🎉 অভিনন্দন! বিজ্ঞাপন দেখে সফলভাবে ${rewardAmount.toFixed(2)} টাকা বোনাস পেয়েছেন।`);
+            } catch (e) {
+                console.log("Ad error or skipped", e);
+                btn.disabled = false;
+                btn.innerText = "বিজ্ঞাপন দেখুন ও আয় করুন";
+                alert("বিজ্ঞাপনটি সম্পন্ন হয়নি বা লোড নেয়নি।");
+            }
         }
 
         // --- রকেট ক্র্যাশ লজিক ---
