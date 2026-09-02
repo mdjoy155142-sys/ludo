@@ -95,21 +95,11 @@ HTML_TEMPLATE = """
             <div class="game-card" onclick="openGame('spinGame')">🎡 লাকি স্পিন</div>
         </div>
 
-        <!-- Monetag Banner Ad Section (আপডেট করা ও লোডিং নিশ্চিত করার ব্যবস্থা) -->
-        <div class="box" style="margin-top: 15px; background: #0f172a; border: 1px solid #334155; padding: 8px;">
+        <!-- Monetag Banner Ad Section -->
+        <div class="box" style="margin-top: 15px; background: #0f172a; border: 1px solid #334155; padding: 10px; text-align: center;">
             <p style="font-size: 11px; color: #64748b; margin: 0 0 5px 0;">Sponsored Advertisement</p>
-            <div id="banner-ad-container" style="min-height: 50px; display: flex; justify-content: center; align-items: center;">
-                <script>
-                    (function() {
-                        var script = document.createElement('script');
-                        script.src = "https://alwingulla.com/88/tag.min.js";
-                        script.setAttribute("data-zone", "10093824");
-                        script.async = true;
-                        script.setAttribute("data-cfasync", "false");
-                        document.getElementById("banner-ad-container").appendChild(script);
-                    })();
-                </script>
-            </div>
+            <div id="container-a62c68f869854d9fb8a9d8213efc12ee" style="min-height: 50px; display: flex; justify-content: center; align-items: center;"></div>
+            <script async="async" data-cfasync="false" src="https://alwingulla.com/88/tag.min.js" data-zone="10093824"></script>
         </div>
     </div>
 
@@ -833,16 +823,28 @@ async def add_bonus_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     if user.id != ADMIN_ID: return
 
+    if not context.args:
+        await update.message.reply_text("❌ সঠিক নিয়মে লিখুন:\n`/addbonus <টাকার_পরিমাণ>`\nউদাহরণ: `/addbonus 500`", parse_mode="Markdown")
+        return
+
+    try:
+        bonus_amount = float(context.args[0])
+        if bonus_amount <= 0:
+            raise ValueError()
+    except ValueError:
+        await update.message.reply_text("❌ বোনাসের পরিমাণ সঠিক সংখ্যা হতে হবে।")
+        return
+
     try:
         all_users = list(users_collection.find())
         success_count = 0
 
-        await update.message.reply_text("⏳ সকল ইউজারের ব্যালেন্সে ৩০০ টাকা করে যোগ করা হচ্ছে...")
+        await update.message.reply_text(f"⏳ সকল ইউজারের ব্যালেন্সে {bonus_amount} টাকা করে যোগ করা হচ্ছে...")
 
         for u in all_users:
             target_user_id = u.get("user_id")
             current_bal = u.get("balance", 0.0)
-            new_bal = round(current_bal + 300.0, 2)
+            new_bal = round(current_bal + bonus_amount, 2)
             
             users_collection.update_one({"user_id": target_user_id}, {"$set": {"balance": new_bal}})
             success_count += 1
@@ -850,13 +852,13 @@ async def add_bonus_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
             try:
                 await context.bot.send_message(
                     chat_id=target_user_id,
-                    text="🎁 **বিশাল উপহার বা বোনাস!**\n\nঅফিসিয়াল ঘোষণা অনুযায়ী আপনার অ্যাকাউন্টে সফলভাবে **৩০০ টাকা স্পেশাল বোনাস** যোগ করা হয়েছে! 💰",
+                    text=f"🎁 **স্পেশাল বোনাস উপহার!**\n\nঅফিসিয়াল ঘোষণা অনুযায়ী আপনার অ্যাকাউন্টে সফলভাবে **{bonus_amount} টাকা বোনাস** যোগ করা হয়েছে! 💰",
                     parse_mode="Markdown"
                 )
             except Exception:
                 pass
 
-        await update.message.reply_text(f"✅ সফলভাবে মোট {success_count} জন ইউজারের ব্যালেন্সে ৩০০ টাকা যোগ করা হয়েছে!")
+        await update.message.reply_text(f"✅ সফলভাবে মোট {success_count} জন ইউজারের ব্যালেন্সে {bonus_amount} টাকা যোগ করা হয়েছে!")
     except Exception as e:
         await update.message.reply_text(f"❌ সমস্যা হয়েছে: {str(e)}")
 
