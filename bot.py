@@ -14,8 +14,8 @@ from pymongo import MongoClient
 # লগিং সেটআপ
 logging.basicConfig(format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO)
 
-# এনভায়রনমেন্ট ভেরিয়েবল বা কনফিগারেশন
-TOKEN = "8713892015:AAFH02hfCmHzaiW2LfGAC0Lvky5iZr_yK5g"
+# এনভায়রনমেন্ট ভেরিয়েবল বা কনফিগারেশন (আপনার দেওয়া আপডেট টোকেনসহ)
+TOKEN = "8713892015:AAGzoR3i37_nhcM2m_Psd2ikUUpl3O2ODdQ"
 ADMIN_ID = 7100342395
 BOT_USERNAME = "Fastpay8_bot"
 SUPPORT_USERNAME = "Jou904"  # লাইভ সাপোর্টের জন্য টেলিগ্রাম ইউজারনেম
